@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ComponentProps,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   RowsPhotoAlbum,
   type Photo,
@@ -28,6 +35,7 @@ function LazyPreviewImage({
 }: LazyPreviewImageProps) {
   const [src, setSrc] = useState(BLANK_IMAGE);
   const [isVisible, setIsVisible] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const timerRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
@@ -42,7 +50,9 @@ function LazyPreviewImage({
     const requestId = ++requestIdRef.current;
     const url = await ensurePreviewUrl(imageId);
     if (requestId !== requestIdRef.current) return;
-    if (url) setSrc(url);
+    if (url) {
+      setSrc(url);
+    }
   }, [ensurePreviewUrl, imageId]);
 
   const scheduleRelease = useCallback(() => {
@@ -50,11 +60,13 @@ function LazyPreviewImage({
     timerRef.current = window.setTimeout(() => {
       releasePreviewUrl(imageId);
       setSrc(BLANK_IMAGE);
+      setIsLoaded(false);
     }, PREVIEW_RELEASE_DELAY_MS);
   }, [clearReleaseTimer, imageId, releasePreviewUrl]);
 
   useEffect(() => {
     setSrc(BLANK_IMAGE);
+    setIsLoaded(false);
     clearReleaseTimer();
 
     if (typeof IntersectionObserver !== "function") {
@@ -97,17 +109,17 @@ function LazyPreviewImage({
     <img
       ref={imgRef}
       {...imgProps}
+      className={`gallery-photo-image${isLoaded ? " is-loaded" : " is-loading"}`}
       src={src}
       loading="lazy"
       decoding="async"
+      onLoad={() => setIsLoaded(src !== BLANK_IMAGE)}
       style={{
         ...imgProps.style,
         width: "100%",
         height: "100%",
         objectFit: "cover",
-        display: "block",
-        background: "#ebe2d6",
-        borderRadius: "12px"
+        display: "block"
       }}
     />
   );
@@ -119,6 +131,27 @@ type GalleryGridProps = {
   ensurePreviewUrl: (id: string) => Promise<string | null>;
   releasePreviewUrl: (id: string) => void;
 };
+
+const renderPhotoButton = (props: ComponentProps<"button">) => (
+  <button
+    {...props}
+    className={`${props.className ?? ""} gallery-photo-button`.trim()}
+    aria-label={props["aria-label"] ?? "打开图片"}
+  />
+);
+
+const renderPhotoExtras = (images: GalleryImage[]) =>
+  function renderExtras(_: unknown, context: RenderImageContext) {
+    const image = images[context.index];
+    if (!image) return null;
+
+    return (
+      <div className="gallery-photo-meta" aria-hidden>
+        <strong>{image.name}</strong>
+        <span>{image.relativePath}</span>
+      </div>
+    );
+  };
 
 const renderPreviewImage = (
   scrollSettled: boolean,
@@ -157,7 +190,8 @@ export default function GalleryGrid({
         width: image.width ?? 4,
         height: image.height ?? 3,
         alt: image.name,
-        title: image.relativePath
+        title: image.relativePath,
+        label: `打开 ${image.name}`
       })),
     [images]
   );
@@ -188,19 +222,26 @@ export default function GalleryGrid({
   if (!photos.length) return null;
 
   return (
-    <RowsPhotoAlbum
-      photos={photos}
-      onClick={({ index }) => onOpen(index)}
-      targetRowHeight={220}
-      spacing={14}
-      render={{
-        image: renderPreviewImage(
-          scrollSettled,
-          ensurePreviewUrl,
-          releasePreviewUrl,
-          images
-        )
-      }}
-    />
+    <>
+      <p className={`gallery-recover-hint${scrollSettled ? "" : " is-visible"}`} role="status">
+        正在快速滚动，停止后会自动加载当前区域图片。
+      </p>
+      <RowsPhotoAlbum
+        photos={photos}
+        onClick={({ index }) => onOpen(index)}
+        targetRowHeight={230}
+        spacing={16}
+        render={{
+          button: renderPhotoButton,
+          extras: renderPhotoExtras(images),
+          image: renderPreviewImage(
+            scrollSettled,
+            ensurePreviewUrl,
+            releasePreviewUrl,
+            images
+          )
+        }}
+      />
+    </>
   );
 }

@@ -32,17 +32,9 @@ export default function ImageLightbox({
       render={{
         slide: ({ slide }) =>
           slide.src === BLANK_IMAGE ? (
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                display: "grid",
-                placeItems: "center",
-                color: "#fff",
-                background: "#111"
-              }}
-            >
-              Loading...
+            <div className="lightbox-loading-card">
+              <span className="dot" />
+              <p>正在载入大图...</p>
             </div>
           ) : undefined
       }}

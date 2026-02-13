@@ -27,6 +27,8 @@ export default function App() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lightboxUrls, setLightboxUrls] = useState<Record<string, string>>({});
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   const canUseDirectoryPicker = useMemo(hasDirectoryPicker, []);
 
@@ -99,15 +101,38 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [currentIndex, images.length, lightboxOpen, openAt]);
 
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setIsScrolled(y > 80);
+
+      const doc = document.documentElement;
+      const max = Math.max(doc.scrollHeight - window.innerHeight, 1);
+      setScrollProgress(Math.min(Math.max(y / max, 0), 1));
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="app">
-      <header className="toolbar">
+      <header className={`toolbar${isScrolled ? " is-scrolled" : ""}`}>
+        <div className="scroll-progress" aria-hidden>
+          <span style={{ transform: `scaleX(${scrollProgress})` }} />
+        </div>
+
         <div className="title-block">
-          <h1>Local Image Gallery</h1>
-          <p>
-            Choose a folder and browse all nested images. Shortcuts: Enter open, Esc
-            close, Arrow Left/Right navigate, F fullscreen.
-          </p>
+          <p className="eyebrow">本地图片档案馆</p>
+          <h1>图像漫游</h1>
+          <p>选择一个本地文件夹，以画廊方式浏览图片并进入沉浸式大图查看。</p>
+          <ul className="shortcut-chips">
+            <li>回车打开</li>
+            <li>Esc 关闭</li>
+            <li>左右切换</li>
+            <li>F 全屏</li>
+          </ul>
         </div>
 
         <div className="actions">
@@ -116,10 +141,10 @@ export default function App() {
             onClick={() => void pickDirectory()}
             disabled={loading || !canUseDirectoryPicker}
           >
-            {loading ? "Scanning..." : "Choose Folder"}
+            {loading ? "扫描中..." : "选择文件夹"}
           </button>
           <button type="button" onClick={clearImages} disabled={!images.length && !error}>
-            Clear
+            清空
           </button>
         </div>
       </header>
@@ -134,14 +159,14 @@ export default function App() {
 
       {!images.length && !loading && !error && (
         <section className="empty-state">
-          <h2>No Images Yet</h2>
-          <p>Select a local folder to start browsing.</p>
+          <h2>还没有可浏览的图片</h2>
+          <p>点击上方“选择文件夹”开始建立你的本地图片画廊。</p>
         </section>
       )}
 
       {images.length > 0 && (
         <section className="gallery-shell">
-          <p className="status ok">{images.length} image(s) loaded.</p>
+          <p className="status ok">已载入 {images.length} 张图片</p>
           <GalleryGrid
             images={images}
             onOpen={openAt}
