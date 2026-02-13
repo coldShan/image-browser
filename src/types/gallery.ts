@@ -1,15 +1,15 @@
+export type GallerySourceType = "gif" | "webp" | "other";
+
 export type GalleryImage = {
   id: string;
   name: string;
   relativePath: string;
   lastModified: number;
   size: number;
-  url: string;
-  previewUrl: string;
-  width?: number;
-  height?: number;
+  sourceType: GallerySourceType;
+  width: number;
+  height: number;
+  fileHandle: FileSystemFileHandle;
 };
 
-export type CollectedImage = Omit<GalleryImage, "id" | "url" | "previewUrl"> & {
-  file: File;
-};
+export type CollectedImageMeta = Omit<GalleryImage, "id">;

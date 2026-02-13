@@ -1,4 +1,4 @@
-import type { CollectedImage } from "../types/gallery";
+import type { CollectedImageMeta, GallerySourceType } from "../types/gallery";
 
 const IMAGE_EXTENSIONS = new Set([
   "jpg",
@@ -12,7 +12,10 @@ const IMAGE_EXTENSIONS = new Set([
   "heif"
 ]);
 
-const STATIC_PREVIEW_EXTENSIONS = new Set(["gif", "webp"]);
+const SOURCE_TYPE_BY_EXTENSION: Partial<Record<string, GallerySourceType>> = {
+  gif: "gif",
+  webp: "webp"
+};
 
 type PickerWindow = Window &
   typeof globalThis & {
@@ -24,21 +27,17 @@ type WalkState = {
   path: string;
 };
 
-type Size = {
-  width: number;
-  height: number;
-};
-
-const DEFAULT_SIZE: Size = { width: 4, height: 3 };
+const DEFAULT_SIZE = { width: 4, height: 3 } as const;
 
 export const isSupportedImageFileName = (name: string): boolean => {
   const extension = name.split(".").pop()?.toLowerCase();
   return Boolean(extension && IMAGE_EXTENSIONS.has(extension));
 };
 
-export const shouldUseStaticPreview = (name: string): boolean => {
+export const getSourceType = (name: string): GallerySourceType => {
   const extension = name.split(".").pop()?.toLowerCase();
-  return Boolean(extension && STATIC_PREVIEW_EXTENSIONS.has(extension));
+  if (!extension) return "other";
+  return SOURCE_TYPE_BY_EXTENSION[extension] ?? "other";
 };
 
 export const hasDirectoryPicker = (): boolean =>
@@ -57,8 +56,8 @@ const byNameAsc = (a: { name: string }, b: { name: string }): number =>
   });
 
 export const sortCollectedImages = (
-  images: CollectedImage[]
-): CollectedImage[] =>
+  images: CollectedImageMeta[]
+): CollectedImageMeta[] =>
   [...images].sort(
     (a, b) =>
       byNameAsc(a, b) ||
@@ -68,24 +67,11 @@ export const sortCollectedImages = (
       })
   );
 
-const readImageSize = async (file: File): Promise<Size> => {
-  if (typeof createImageBitmap !== "function") return DEFAULT_SIZE;
-
-  try {
-    const bitmap = await createImageBitmap(file);
-    const size = { width: bitmap.width, height: bitmap.height };
-    bitmap.close();
-    return size;
-  } catch {
-    return DEFAULT_SIZE;
-  }
-};
-
 export const collectImagesFromDirectory = async (
   root: FileSystemDirectoryHandle
-): Promise<CollectedImage[]> => {
+): Promise<CollectedImageMeta[]> => {
   const stack: WalkState[] = [{ handle: root, path: "" }];
-  const collected: CollectedImage[] = [];
+  const collected: CollectedImageMeta[] = [];
 
   while (stack.length) {
     const current = stack.pop()!;
@@ -103,18 +89,19 @@ export const collectImagesFromDirectory = async (
 
       if (entry.kind !== "file" || !isSupportedImageFileName(name)) continue;
 
-      const file = await (entry as FileSystemFileHandle).getFile();
+      const fileHandle = entry as FileSystemFileHandle;
       const relativePath = current.path ? `${current.path}/${name}` : name;
-      const { width, height } = await readImageSize(file);
+      const { width, height } = DEFAULT_SIZE;
 
       collected.push({
         name,
         relativePath,
-        lastModified: file.lastModified,
-        size: file.size,
+        lastModified: 0,
+        size: 0,
+        sourceType: getSourceType(name),
         width,
         height,
-        file
+        fileHandle
       });
     }
   }

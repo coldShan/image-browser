@@ -1,16 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { CollectedImage, GalleryImage } from "../types/gallery";
-import {
-  collectImagesFromDirectory,
-  getDirectoryPicker,
-  shouldUseStaticPreview
-} from "../utils/fileSystem";
-import {
-  createManagedObjectUrl,
-  createUrlRegistry,
-  releaseAllObjectUrls,
-  type UrlRegistry
-} from "../utils/imageUrl";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CollectedImageMeta, GalleryImage } from "../types/gallery";
+import { collectImagesFromDirectory, getDirectoryPicker } from "../utils/fileSystem";
+import { createResourceManager } from "../utils/resourceManager";
 
 export type UseDirectoryImagesResult = {
   images: GalleryImage[];
@@ -18,61 +9,55 @@ export type UseDirectoryImagesResult = {
   error: string | null;
   pickDirectory: () => Promise<void>;
   clearImages: () => void;
+  ensurePreviewUrl: (id: string) => Promise<string | null>;
+  releasePreviewUrl: (id: string) => void;
+  syncLightboxWindow: (index: number) => Promise<Record<string, string>>;
+  releaseAllLightboxUrls: () => void;
 };
 
-const toGalleryImage = (
-  image: CollectedImage,
-  url: string,
-  previewUrl: string,
-  index: number
-): GalleryImage => ({
-  id: `${image.relativePath}:${image.lastModified}:${image.size}:${index}`,
-  name: image.name,
-  relativePath: image.relativePath,
-  lastModified: image.lastModified,
-  size: image.size,
-  width: image.width,
-  height: image.height,
-  url,
-  previewUrl
+const toGalleryImage = (image: CollectedImageMeta, index: number): GalleryImage => ({
+  ...image,
+  id: `${image.relativePath}:${index}`
 });
-
-const createStaticPreviewUrl = async (
-  file: File,
-  registry: UrlRegistry
-): Promise<string | null> => {
-  if (typeof createImageBitmap !== "function" || typeof document === "undefined") {
-    return null;
-  }
-
-  try {
-    const bitmap = await createImageBitmap(file);
-    const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width || 1;
-    canvas.height = bitmap.height || 1;
-    canvas.getContext("2d")?.drawImage(bitmap, 0, 0);
-    bitmap.close();
-
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, "image/png");
-    });
-
-    return blob ? createManagedObjectUrl(blob, registry) : null;
-  } catch {
-    return null;
-  }
-};
 
 export const useDirectoryImages = (): UseDirectoryImagesResult => {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const registryRef = useRef(createUrlRegistry());
+  const managerRef = useRef(createResourceManager());
+
+  const imageMap = useMemo(
+    () => new Map(images.map((image) => [image.id, image])),
+    [images]
+  );
 
   const clearImages = useCallback(() => {
-    releaseAllObjectUrls(registryRef.current);
+    managerRef.current.releaseAll();
     setImages([]);
     setError(null);
+  }, []);
+
+  const ensurePreviewUrl = useCallback(
+    async (id: string): Promise<string | null> => {
+      const image = imageMap.get(id);
+      if (!image) return null;
+      return managerRef.current.ensurePreviewUrl(image);
+    },
+    [imageMap]
+  );
+
+  const releasePreviewUrl = useCallback((id: string) => {
+    managerRef.current.releasePreviewUrl(id);
+  }, []);
+
+  const syncLightboxWindow = useCallback(
+    async (index: number): Promise<Record<string, string>> =>
+      managerRef.current.syncLightboxWindow(images, index),
+    [images]
+  );
+
+  const releaseAllLightboxUrls = useCallback(() => {
+    managerRef.current.releaseAllLightbox();
   }, []);
 
   const pickDirectory = useCallback(async () => {
@@ -88,21 +73,9 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
 
       const directory = await picker();
       const collected = await collectImagesFromDirectory(directory);
-      const nextRegistry = createUrlRegistry();
-      const nextImages = await Promise.all(
-        collected.map(async (item, index) => {
-          const url = createManagedObjectUrl(item.file, nextRegistry);
-          const previewUrl =
-            shouldUseStaticPreview(item.name)
-              ? await createStaticPreviewUrl(item.file, nextRegistry)
-              : null;
+      const nextImages = collected.map((item, index) => toGalleryImage(item, index));
 
-          return toGalleryImage(item, url, previewUrl ?? url, index);
-        })
-      );
-
-      releaseAllObjectUrls(registryRef.current);
-      registryRef.current = nextRegistry;
+      managerRef.current.releaseAll();
       setImages(nextImages);
 
       if (!nextImages.length) {
@@ -119,10 +92,20 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
 
   useEffect(
     () => () => {
-      releaseAllObjectUrls(registryRef.current);
+      managerRef.current.releaseAll();
     },
     []
   );
 
-  return { images, loading, error, pickDirectory, clearImages };
+  return {
+    images,
+    loading,
+    error,
+    pickDirectory,
+    clearImages,
+    ensurePreviewUrl,
+    releasePreviewUrl,
+    syncLightboxWindow,
+    releaseAllLightboxUrls
+  };
 };

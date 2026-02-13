@@ -13,9 +13,20 @@ const toggleFullscreen = async (): Promise<void> => {
 };
 
 export default function App() {
-  const { images, loading, error, pickDirectory, clearImages } = useDirectoryImages();
+  const {
+    images,
+    loading,
+    error,
+    pickDirectory,
+    clearImages,
+    ensurePreviewUrl,
+    releasePreviewUrl,
+    syncLightboxWindow,
+    releaseAllLightboxUrls
+  } = useDirectoryImages();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [lightboxUrls, setLightboxUrls] = useState<Record<string, string>>({});
 
   const canUseDirectoryPicker = useMemo(hasDirectoryPicker, []);
 
@@ -36,6 +47,26 @@ export default function App() {
     }
     if (currentIndex > images.length - 1) setCurrentIndex(images.length - 1);
   }, [currentIndex, images.length]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    let cancelled = false;
+    void syncLightboxWindow(currentIndex).then((urls) => {
+      if (cancelled) return;
+      setLightboxUrls(urls);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentIndex, lightboxOpen, syncLightboxWindow]);
+
+  useEffect(() => {
+    if (lightboxOpen) return;
+    releaseAllLightboxUrls();
+    setLightboxUrls({});
+  }, [lightboxOpen, releaseAllLightboxUrls]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -111,7 +142,12 @@ export default function App() {
       {images.length > 0 && (
         <section className="gallery-shell">
           <p className="status ok">{images.length} image(s) loaded.</p>
-          <GalleryGrid images={images} onOpen={openAt} />
+          <GalleryGrid
+            images={images}
+            onOpen={openAt}
+            ensurePreviewUrl={ensurePreviewUrl}
+            releasePreviewUrl={releasePreviewUrl}
+          />
         </section>
       )}
 
@@ -119,6 +155,7 @@ export default function App() {
         open={lightboxOpen}
         index={currentIndex}
         images={images}
+        lightboxUrls={lightboxUrls}
         onClose={() => setLightboxOpen(false)}
         onIndexChange={setCurrentIndex}
       />

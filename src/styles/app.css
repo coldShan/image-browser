@@ -139,6 +139,37 @@ body {
     border-radius: 16px;
     background: color-mix(in srgb, var(--paper) 95%, white);
     padding: 0.9rem;
+
+    .gallery-masonry {
+      column-width: 220px;
+      column-gap: 14px;
+    }
+
+    .masonry-item {
+      display: block;
+      width: 100%;
+      margin: 0 0 14px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      break-inside: avoid;
+      cursor: pointer;
+      border-radius: 12px;
+      overflow: hidden;
+
+      &:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+    }
+
+    .masonry-thumb {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      background: #ebe2d6;
+    }
   }
 }
 
