@@ -16,7 +16,8 @@ export const toLightboxSlides = (
 ): LightboxSlide[] =>
   images.map((image) => ({
     src: lightboxUrls[image.id] ?? BLANK_IMAGE,
-    width: image.width,
-    height: image.height,
+    ...(typeof image.width === "number" && typeof image.height === "number"
+      ? { width: image.width, height: image.height }
+      : {}),
     alt: image.name
   }));

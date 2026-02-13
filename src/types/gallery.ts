@@ -7,8 +7,8 @@ export type GalleryImage = {
   lastModified: number;
   size: number;
   sourceType: GallerySourceType;
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
   fileHandle: FileSystemFileHandle;
 };
 

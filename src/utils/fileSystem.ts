@@ -27,8 +27,6 @@ type WalkState = {
   path: string;
 };
 
-const DEFAULT_SIZE = { width: 4, height: 3 } as const;
-
 export const isSupportedImageFileName = (name: string): boolean => {
   const extension = name.split(".").pop()?.toLowerCase();
   return Boolean(extension && IMAGE_EXTENSIONS.has(extension));
@@ -91,7 +89,6 @@ export const collectImagesFromDirectory = async (
 
       const fileHandle = entry as FileSystemFileHandle;
       const relativePath = current.path ? `${current.path}/${name}` : name;
-      const { width, height } = DEFAULT_SIZE;
 
       collected.push({
         name,
@@ -99,8 +96,6 @@ export const collectImagesFromDirectory = async (
         lastModified: 0,
         size: 0,
         sourceType: getSourceType(name),
-        width,
-        height,
         fileHandle
       });
     }

@@ -4,6 +4,18 @@ import { describe, expect, it, vi } from "vitest";
 import GalleryGrid from "../GalleryGrid";
 import type { GalleryImage } from "../../types/gallery";
 
+vi.mock("react-photo-album", () => ({
+  RowsPhotoAlbum: ({
+    onClick
+  }: {
+    onClick: (payload: { index: number }) => void;
+  }) => (
+    <button type="button" onClick={() => onClick({ index: 0 })}>
+      mock-album
+    </button>
+  )
+}));
+
 const images: GalleryImage[] = [
   {
     id: "1",
@@ -35,7 +47,7 @@ describe("GalleryGrid", () => {
       />
     );
 
-    await user.click(screen.getByRole("button", { name: "Open cover.jpg" }));
+    await user.click(screen.getByRole("button", { name: "mock-album" }));
     expect(onOpen).toHaveBeenCalledWith(0);
   });
 });

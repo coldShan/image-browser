@@ -1,19 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  RowsPhotoAlbum,
+  type Photo,
+  type RenderImageContext,
+  type RenderImageProps
+} from "react-photo-album";
+import "react-photo-album/rows.css";
 import type { GalleryImage } from "../types/gallery";
 import { BLANK_IMAGE } from "../utils/lightbox";
 
 const PREVIEW_RELEASE_DELAY_MS = 10_000;
 
-type LazyPreviewImageProps = {
-  image: GalleryImage;
+type LazyPreviewImageProps = RenderImageProps & {
+  imageId: string;
   ensurePreviewUrl: (id: string) => Promise<string | null>;
   releasePreviewUrl: (id: string) => void;
 };
 
 function LazyPreviewImage({
-  image,
+  imageId,
   ensurePreviewUrl,
-  releasePreviewUrl
+  releasePreviewUrl,
+  ...imgProps
 }: LazyPreviewImageProps) {
   const [src, setSrc] = useState(BLANK_IMAGE);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -28,18 +36,18 @@ function LazyPreviewImage({
 
   const loadPreview = useCallback(async () => {
     const requestId = ++requestIdRef.current;
-    const url = await ensurePreviewUrl(image.id);
+    const url = await ensurePreviewUrl(imageId);
     if (requestId !== requestIdRef.current) return;
     if (url) setSrc(url);
-  }, [ensurePreviewUrl, image.id]);
+  }, [ensurePreviewUrl, imageId]);
 
   const scheduleRelease = useCallback(() => {
     clearReleaseTimer();
     timerRef.current = window.setTimeout(() => {
-      releasePreviewUrl(image.id);
+      releasePreviewUrl(imageId);
       setSrc(BLANK_IMAGE);
     }, PREVIEW_RELEASE_DELAY_MS);
-  }, [clearReleaseTimer, image.id, releasePreviewUrl]);
+  }, [clearReleaseTimer, imageId, releasePreviewUrl]);
 
   useEffect(() => {
     setSrc(BLANK_IMAGE);
@@ -70,20 +78,27 @@ function LazyPreviewImage({
     return () => {
       requestIdRef.current++;
       clearReleaseTimer();
-      releasePreviewUrl(image.id);
+      releasePreviewUrl(imageId);
       observer.disconnect();
     };
-  }, [clearReleaseTimer, image.id, loadPreview, releasePreviewUrl, scheduleRelease]);
+  }, [clearReleaseTimer, imageId, loadPreview, releasePreviewUrl, scheduleRelease]);
 
   return (
     <img
       ref={imgRef}
-      className="masonry-thumb"
+      {...imgProps}
       src={src}
-      alt={image.name}
-      title={image.relativePath}
       loading="lazy"
       decoding="async"
+      style={{
+        ...imgProps.style,
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        display: "block",
+        background: "#ebe2d6",
+        borderRadius: "12px"
+      }}
     />
   );
 }
@@ -95,31 +110,56 @@ type GalleryGridProps = {
   releasePreviewUrl: (id: string) => void;
 };
 
+const renderPreviewImage = (
+  ensurePreviewUrl: (id: string) => Promise<string | null>,
+  releasePreviewUrl: (id: string) => void,
+  images: GalleryImage[]
+) =>
+  function renderImage(props: RenderImageProps, context: RenderImageContext) {
+    const image = images[context.index];
+    if (!image) return <img {...props} />;
+
+    return (
+      <LazyPreviewImage
+        key={image.id}
+        imageId={image.id}
+        ensurePreviewUrl={ensurePreviewUrl}
+        releasePreviewUrl={releasePreviewUrl}
+        {...props}
+      />
+    );
+  };
+
 export default function GalleryGrid({
   images,
   onOpen,
   ensurePreviewUrl,
   releasePreviewUrl
 }: GalleryGridProps) {
-  if (!images.length) return null;
+  const photos = useMemo<Photo[]>(
+    () =>
+      images.map((image) => ({
+        key: image.id,
+        src: BLANK_IMAGE,
+        width: image.width ?? 4,
+        height: image.height ?? 3,
+        alt: image.name,
+        title: image.relativePath
+      })),
+    [images]
+  );
+
+  if (!photos.length) return null;
 
   return (
-    <div className="gallery-masonry">
-      {images.map((image, index) => (
-        <button
-          key={image.id}
-          type="button"
-          className="masonry-item"
-          onClick={() => onOpen(index)}
-          aria-label={`Open ${image.name}`}
-        >
-          <LazyPreviewImage
-            image={image}
-            ensurePreviewUrl={ensurePreviewUrl}
-            releasePreviewUrl={releasePreviewUrl}
-          />
-        </button>
-      ))}
-    </div>
+    <RowsPhotoAlbum
+      photos={photos}
+      onClick={({ index }) => onOpen(index)}
+      targetRowHeight={220}
+      spacing={14}
+      render={{
+        image: renderPreviewImage(ensurePreviewUrl, releasePreviewUrl, images)
+      }}
+    />
   );
 }
