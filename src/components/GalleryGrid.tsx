@@ -10,20 +10,24 @@ import type { GalleryImage } from "../types/gallery";
 import { BLANK_IMAGE } from "../utils/lightbox";
 
 const PREVIEW_RELEASE_DELAY_MS = 10_000;
+const SCROLL_SETTLE_DELAY_MS = 180;
 
 type LazyPreviewImageProps = RenderImageProps & {
   imageId: string;
+  scrollSettled: boolean;
   ensurePreviewUrl: (id: string) => Promise<string | null>;
   releasePreviewUrl: (id: string) => void;
 };
 
 function LazyPreviewImage({
   imageId,
+  scrollSettled,
   ensurePreviewUrl,
   releasePreviewUrl,
   ...imgProps
 }: LazyPreviewImageProps) {
   const [src, setSrc] = useState(BLANK_IMAGE);
+  const [isVisible, setIsVisible] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const timerRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
@@ -62,12 +66,7 @@ function LazyPreviewImage({
       (entries) => {
         const [entry] = entries;
         if (!entry) return;
-        if (entry.isIntersecting) {
-          clearReleaseTimer();
-          void loadPreview();
-        } else {
-          scheduleRelease();
-        }
+        setIsVisible(entry.isIntersecting);
       },
       { rootMargin: "300px 0px" }
     );
@@ -82,6 +81,17 @@ function LazyPreviewImage({
       observer.disconnect();
     };
   }, [clearReleaseTimer, imageId, loadPreview, releasePreviewUrl, scheduleRelease]);
+
+  useEffect(() => {
+    if (!isVisible) {
+      scheduleRelease();
+      return;
+    }
+
+    clearReleaseTimer();
+    if (!scrollSettled) return;
+    void loadPreview();
+  }, [clearReleaseTimer, isVisible, loadPreview, scheduleRelease, scrollSettled]);
 
   return (
     <img
@@ -111,6 +121,7 @@ type GalleryGridProps = {
 };
 
 const renderPreviewImage = (
+  scrollSettled: boolean,
   ensurePreviewUrl: (id: string) => Promise<string | null>,
   releasePreviewUrl: (id: string) => void,
   images: GalleryImage[]
@@ -123,6 +134,7 @@ const renderPreviewImage = (
       <LazyPreviewImage
         key={image.id}
         imageId={image.id}
+        scrollSettled={scrollSettled}
         ensurePreviewUrl={ensurePreviewUrl}
         releasePreviewUrl={releasePreviewUrl}
         {...props}
@@ -136,6 +148,7 @@ export default function GalleryGrid({
   ensurePreviewUrl,
   releasePreviewUrl
 }: GalleryGridProps) {
+  const [scrollSettled, setScrollSettled] = useState(true);
   const photos = useMemo<Photo[]>(
     () =>
       images.map((image) => ({
@@ -149,6 +162,29 @@ export default function GalleryGrid({
     [images]
   );
 
+  useEffect(() => {
+    let timer: number | null = null;
+
+    const onScrollActivity = () => {
+      setScrollSettled(false);
+      if (timer !== null) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        setScrollSettled(true);
+      }, SCROLL_SETTLE_DELAY_MS);
+    };
+
+    window.addEventListener("scroll", onScrollActivity, { passive: true });
+    window.addEventListener("wheel", onScrollActivity, { passive: true });
+    window.addEventListener("touchmove", onScrollActivity, { passive: true });
+
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+      window.removeEventListener("scroll", onScrollActivity);
+      window.removeEventListener("wheel", onScrollActivity);
+      window.removeEventListener("touchmove", onScrollActivity);
+    };
+  }, []);
+
   if (!photos.length) return null;
 
   return (
@@ -158,7 +194,12 @@ export default function GalleryGrid({
       targetRowHeight={220}
       spacing={14}
       render={{
-        image: renderPreviewImage(ensurePreviewUrl, releasePreviewUrl, images)
+        image: renderPreviewImage(
+          scrollSettled,
+          ensurePreviewUrl,
+          releasePreviewUrl,
+          images
+        )
       }}
     />
   );
