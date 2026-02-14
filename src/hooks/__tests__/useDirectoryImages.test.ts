@@ -44,6 +44,7 @@ describe("useDirectoryImages", () => {
       await result.current.pickDirectory();
     });
 
+    expect(picker).toHaveBeenCalledWith({ mode: "read" });
     expect(result.current.images).toHaveLength(1);
     expect(getFile).not.toHaveBeenCalled();
 

@@ -19,13 +19,32 @@ const SOURCE_TYPE_BY_EXTENSION: Partial<Record<string, GallerySourceType>> = {
 
 type PickerWindow = Window &
   typeof globalThis & {
-    showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>;
+    showDirectoryPicker?: (
+      options?: DirectoryPickerOptionsLike
+    ) => Promise<FileSystemDirectoryHandle>;
   };
+
+type DirectoryPickerOptionsLike = {
+  id?: string;
+  mode?: "read" | "readwrite";
+  startIn?: FileSystemHandle | string;
+};
 
 type WalkState = {
   handle: FileSystemDirectoryHandle;
   path: string;
 };
+
+const SKIPPABLE_DIRECTORY_ERROR_NAMES = new Set([
+  "NoModificationAllowedError",
+  "NotAllowedError",
+  "NotReadableError",
+  "SecurityError",
+  "NotFoundError"
+]);
+
+const isSkippableDirectoryError = (error: unknown): boolean =>
+  error instanceof DOMException && SKIPPABLE_DIRECTORY_ERROR_NAMES.has(error.name);
 
 export const isSupportedImageFileName = (name: string): boolean => {
   const extension = name.split(".").pop()?.toLowerCase();
@@ -41,7 +60,9 @@ export const getSourceType = (name: string): GallerySourceType => {
 export const hasDirectoryPicker = (): boolean =>
   typeof window !== "undefined" && "showDirectoryPicker" in window;
 
-export const getDirectoryPicker = (): (() => Promise<FileSystemDirectoryHandle>) | null => {
+export const getDirectoryPicker = ():
+  | ((options?: DirectoryPickerOptionsLike) => Promise<FileSystemDirectoryHandle>)
+  | null => {
   if (typeof window === "undefined") return null;
   const picker = (window as PickerWindow).showDirectoryPicker;
   return typeof picker === "function" ? picker.bind(window) : null;
@@ -73,31 +94,35 @@ export const collectImagesFromDirectory = async (
 
   while (stack.length) {
     const current = stack.pop()!;
+    try {
+      for await (const entry of current.handle.values()) {
+        const name = entry.name;
+        if (entry.kind === "directory") {
+          const nextPath = current.path ? `${current.path}/${name}` : name;
+          stack.push({
+            handle: entry as FileSystemDirectoryHandle,
+            path: nextPath
+          });
+          continue;
+        }
 
-    for await (const entry of current.handle.values()) {
-      const name = entry.name;
-      if (entry.kind === "directory") {
-        const nextPath = current.path ? `${current.path}/${name}` : name;
-        stack.push({
-          handle: entry as FileSystemDirectoryHandle,
-          path: nextPath
+        if (entry.kind !== "file" || !isSupportedImageFileName(name)) continue;
+
+        const fileHandle = entry as FileSystemFileHandle;
+        const relativePath = current.path ? `${current.path}/${name}` : name;
+
+        collected.push({
+          name,
+          relativePath,
+          lastModified: 0,
+          size: 0,
+          sourceType: getSourceType(name),
+          fileHandle
         });
-        continue;
       }
-
-      if (entry.kind !== "file" || !isSupportedImageFileName(name)) continue;
-
-      const fileHandle = entry as FileSystemFileHandle;
-      const relativePath = current.path ? `${current.path}/${name}` : name;
-
-      collected.push({
-        name,
-        relativePath,
-        lastModified: 0,
-        size: 0,
-        sourceType: getSourceType(name),
-        fileHandle
-      });
+    } catch (error) {
+      if (isSkippableDirectoryError(error)) continue;
+      throw error;
     }
   }
 

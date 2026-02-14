@@ -71,7 +71,7 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
       setLoading(true);
       setError(null);
 
-      const directory = await picker();
+      const directory = await picker({ mode: "read" });
       const collected = await collectImagesFromDirectory(directory);
       const nextImages = collected.map((item, index) => toGalleryImage(item, index));
 
@@ -84,6 +84,13 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
     } catch (error_) {
       const errorObject = error_ as DOMException | Error;
       if (errorObject instanceof DOMException && errorObject.name === "AbortError") return;
+      if (
+        errorObject instanceof DOMException &&
+        errorObject.name === "NoModificationAllowedError"
+      ) {
+        setError("目录当前不可访问（可能只读或被系统占用），请重新选择其他目录。");
+        return;
+      }
       setError(errorObject.message || "Failed to read folder.");
     } finally {
       setLoading(false);

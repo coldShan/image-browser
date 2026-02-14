@@ -83,4 +83,43 @@ describe("collectImagesFromDirectory", () => {
     });
     expect(images[0].fileHandle).toBe(fileHandle);
   });
+
+  it("skips unreadable sub-directories and continues scanning", async () => {
+    const goodFileHandle = {
+      kind: "file",
+      name: "ok.jpg"
+    } as unknown as FileSystemFileHandle;
+
+    const blockedDirectory = {
+      kind: "directory",
+      name: "blocked",
+      async *values() {
+        throw new DOMException(
+          "An attempt was made to write to a file or directory which could not be modified due to the state of the underlying filesystem.",
+          "NoModificationAllowedError"
+        );
+      }
+    } as unknown as FileSystemDirectoryHandle;
+
+    const readableDirectory = {
+      kind: "directory",
+      name: "readable",
+      async *values() {
+        yield goodFileHandle as unknown as FileSystemHandle;
+      }
+    } as unknown as FileSystemDirectoryHandle;
+
+    const root = {
+      kind: "directory",
+      name: "root",
+      async *values() {
+        yield blockedDirectory as unknown as FileSystemHandle;
+        yield readableDirectory as unknown as FileSystemHandle;
+      }
+    } as unknown as FileSystemDirectoryHandle;
+
+    await expect(collectImagesFromDirectory(root)).resolves.toMatchObject([
+      { relativePath: "readable/ok.jpg" }
+    ]);
+  });
 });
