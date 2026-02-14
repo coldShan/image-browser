@@ -119,9 +119,11 @@ export default function App() {
   return (
     <div className="app">
       <header className={`toolbar${isScrolled ? " is-scrolled" : ""}`}>
-        <div className="scroll-progress" aria-hidden>
-          <span style={{ transform: `scaleX(${scrollProgress})` }} />
-        </div>
+        {isScrolled && (
+          <div className="scroll-progress" aria-hidden>
+            <span style={{ transform: `scaleX(${scrollProgress})` }} />
+          </div>
+        )}
 
         <div className="title-block">
           <p className="eyebrow">本地图片档案馆</p>
