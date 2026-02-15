@@ -54,7 +54,7 @@ const images: GalleryImage[] = [
 ];
 
 vi.mock("../utils/fileSystem", () => ({
-  hasDirectoryPicker: () => true
+  hasImagePicker: () => true
 }));
 
 vi.mock("../hooks/useDirectoryImages", () => ({
@@ -168,7 +168,7 @@ describe("App view modes", () => {
       "true"
     );
 
-    await user.click(screen.getByRole("button", { name: "选择文件夹" }));
+    await user.click(screen.getByRole("button", { name: "选择文件夹或图片" }));
 
     expect(hookResult.pickDirectory).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("tab", { name: "画集模式" })).toHaveAttribute(

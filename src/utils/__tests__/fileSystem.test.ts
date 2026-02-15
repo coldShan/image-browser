@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CollectedImageMeta, GallerySourceType } from "../../types/gallery";
 import {
+  collectImagesFromFiles,
   collectImagesFromDirectory,
   getSourceType,
   isSupportedImageFileName,
@@ -121,5 +122,32 @@ describe("collectImagesFromDirectory", () => {
     await expect(collectImagesFromDirectory(root)).resolves.toMatchObject([
       { relativePath: "readable/ok.jpg" }
     ]);
+  });
+});
+
+describe("collectImagesFromFiles", () => {
+  it("uses webkitRelativePath when provided and keeps file access", async () => {
+    const nested = new File(["nested"], "a.jpg", { type: "image/jpeg" });
+    Object.defineProperty(nested, "webkitRelativePath", {
+      configurable: true,
+      value: "album/a.jpg"
+    });
+    const root = new File(["root"], "b.webp", { type: "image/webp" });
+    const ignored = new File(["x"], "note.txt", { type: "text/plain" });
+
+    const images = collectImagesFromFiles([ignored, root, nested]);
+
+    expect(images).toHaveLength(2);
+    expect(images[0]).toMatchObject({
+      name: "a.jpg",
+      relativePath: "album/a.jpg",
+      sourceType: "other"
+    });
+    expect(images[1]).toMatchObject({
+      name: "b.webp",
+      relativePath: "b.webp",
+      sourceType: "webp"
+    });
+    await expect(images[0].fileHandle.getFile()).resolves.toBe(nested);
   });
 });

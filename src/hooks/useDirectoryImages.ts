@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CollectedImageMeta, GalleryImage } from "../types/gallery";
-import { collectImagesFromDirectory, getDirectoryPicker } from "../utils/fileSystem";
+import {
+  collectImagesFromDirectory,
+  getDirectoryPicker,
+  openImageFilePicker
+} from "../utils/fileSystem";
 import { createResourceManager } from "../utils/resourceManager";
 
 export type UseDirectoryImagesResult = {
@@ -67,18 +71,14 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
   }, []);
 
   const pickDirectory = useCallback(async () => {
-    const picker = getDirectoryPicker();
-    if (!picker) {
-      setError("当前浏览器不支持目录选择，请使用最新版 Chrome/Edge");
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      const directory = await picker({ mode: "read" });
-      const collected = await collectImagesFromDirectory(directory);
+      const picker = getDirectoryPicker();
+      const collected = picker
+        ? await picker({ mode: "read" }).then(collectImagesFromDirectory)
+        : await openImageFilePicker();
       const nextImages = collected.map((item, index) => toGalleryImage(item, index));
 
       managerRef.current.releaseAll();

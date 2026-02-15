@@ -1,8 +1,12 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDirectoryImages } from "../useDirectoryImages";
 
 describe("useDirectoryImages", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   beforeEach(() => {
     Object.defineProperty(URL, "createObjectURL", {
       configurable: true,
@@ -53,5 +57,51 @@ describe("useDirectoryImages", () => {
     });
 
     expect(getFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to file picker when directory picker is unavailable", async () => {
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true,
+      writable: true,
+      value: undefined
+    });
+
+    const selected = new File(["x"], "photo.jpg", { type: "image/jpeg" });
+    Object.defineProperty(selected, "webkitRelativePath", {
+      configurable: true,
+      value: "album/photo.jpg"
+    });
+
+    const input = document.createElement("input");
+    Object.defineProperty(input, "files", {
+      configurable: true,
+      get: () => [selected] as unknown as FileList
+    });
+    const click = vi.spyOn(input, "click").mockImplementation(() => {
+      input.dispatchEvent(new Event("change"));
+    });
+
+    const originalCreateElement = document.createElement.bind(document);
+    const createElement = vi.spyOn(document, "createElement");
+    createElement.mockImplementation(
+      ((tagName: string): HTMLElement => {
+        if (tagName === "input") return input;
+        return originalCreateElement(tagName);
+      }) as typeof document.createElement
+    );
+
+    const { result } = renderHook(() => useDirectoryImages());
+
+    await act(async () => {
+      await result.current.pickDirectory();
+    });
+
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(result.current.error).toBeNull();
+    expect(result.current.images).toHaveLength(1);
+    expect(result.current.images[0]).toMatchObject({
+      name: "photo.jpg",
+      relativePath: "album/photo.jpg"
+    });
   });
 });

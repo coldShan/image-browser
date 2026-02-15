@@ -5,7 +5,7 @@ import ImageLightbox from "./components/ImageLightbox";
 import { useDirectoryImages } from "./hooks/useDirectoryImages";
 import type { GalleryViewMode } from "./types/gallery";
 import { buildAlbums, filterImagesByPath } from "./utils/albums";
-import { hasDirectoryPicker } from "./utils/fileSystem";
+import { hasImagePicker } from "./utils/fileSystem";
 
 const toggleFullscreen = async (): Promise<void> => {
   if (!document.fullscreenElement) {
@@ -36,7 +36,7 @@ export default function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  const canUseDirectoryPicker = useMemo(hasDirectoryPicker, []);
+  const canPickImages = useMemo(hasImagePicker, []);
   const albums = useMemo(() => buildAlbums(images), [images]);
   const visibleImages = useMemo(() => {
     if (viewMode === "all") return filterImagesByPath(images, allModePath);
@@ -239,9 +239,9 @@ export default function App() {
           <button
             type="button"
             onClick={() => void onPickDirectory()}
-            disabled={loading || !canUseDirectoryPicker}
+            disabled={loading || !canPickImages}
           >
-            {loading ? "扫描中..." : "选择文件夹"}
+            {loading ? "扫描中..." : "选择文件夹或图片"}
           </button>
           <button type="button" onClick={onClearImages} disabled={!images.length && !error}>
             清空
@@ -249,9 +249,9 @@ export default function App() {
         </div>
       </header>
 
-      {!canUseDirectoryPicker && (
+      {!canPickImages && (
         <p className="status warning">
-          当前浏览器不支持目录选择，请使用最新版 Chrome/Edge
+          当前浏览器不支持本地文件选择，请更换浏览器后重试
         </p>
       )}
 
@@ -260,7 +260,7 @@ export default function App() {
       {!images.length && !loading && !error && (
         <section className="empty-state">
           <h2>还没有可浏览的图片</h2>
-          <p>点击上方“选择文件夹”开始建立你的本地图片画廊。</p>
+          <p>点击上方“选择文件夹或图片”开始建立你的本地图片画廊。</p>
         </section>
       )}
 

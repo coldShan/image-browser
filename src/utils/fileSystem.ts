@@ -30,6 +30,10 @@ type DirectoryPickerOptionsLike = {
   startIn?: FileSystemHandle | string;
 };
 
+type FileInputLike = HTMLInputElement & {
+  webkitdirectory?: boolean;
+};
+
 type WalkState = {
   handle: FileSystemDirectoryHandle;
   path: string;
@@ -60,12 +64,98 @@ export const getSourceType = (name: string): GallerySourceType => {
 export const hasDirectoryPicker = (): boolean =>
   typeof window !== "undefined" && "showDirectoryPicker" in window;
 
+export const hasImagePicker = (): boolean =>
+  hasDirectoryPicker() || typeof document !== "undefined";
+
 export const getDirectoryPicker = ():
   | ((options?: DirectoryPickerOptionsLike) => Promise<FileSystemDirectoryHandle>)
   | null => {
   if (typeof window === "undefined") return null;
   const picker = (window as PickerWindow).showDirectoryPicker;
   return typeof picker === "function" ? picker.bind(window) : null;
+};
+
+const toVirtualFileHandle = (file: File): FileSystemFileHandle =>
+  ({
+    kind: "file",
+    name: file.name,
+    getFile: async () => file
+  }) as unknown as FileSystemFileHandle;
+
+const toRelativePath = (file: File): string => {
+  const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath;
+  return relativePath && relativePath.length > 0 ? relativePath : file.name;
+};
+
+export const collectImagesFromFiles = (files: Iterable<File>): CollectedImageMeta[] =>
+  sortCollectedImages(
+    Array.from(files)
+      .filter((file) => isSupportedImageFileName(file.name))
+      .map((file) => ({
+        name: file.name,
+        relativePath: toRelativePath(file),
+        lastModified: file.lastModified,
+        size: file.size,
+        sourceType: getSourceType(file.name),
+        fileHandle: toVirtualFileHandle(file)
+      }))
+  );
+
+export const openImageFilePicker = (): Promise<CollectedImageMeta[]> => {
+  if (typeof document === "undefined") return Promise.resolve([]);
+
+  return new Promise((resolve, reject) => {
+    const input = document.createElement("input") as FileInputLike;
+    input.type = "file";
+    input.multiple = true;
+    input.accept = "image/*";
+    input.webkitdirectory = true;
+    input.style.position = "fixed";
+    input.style.left = "-9999px";
+
+    const container = document.body ?? document.documentElement;
+    container.appendChild(input);
+
+    let settled = false;
+    let focusTimer: number | null = null;
+
+    const finish = (task: () => void) => {
+      if (settled) return;
+      settled = true;
+      if (focusTimer !== null) window.clearTimeout(focusTimer);
+      window.removeEventListener("focus", onWindowFocus);
+      input.remove();
+      task();
+    };
+
+    const onChange = () => {
+      const files = Array.from(input.files ?? []);
+      finish(() => resolve(collectImagesFromFiles(files)));
+    };
+
+    const onCancel = () => {
+      finish(() =>
+        reject(new DOMException("The user aborted a request.", "AbortError"))
+      );
+    };
+
+    const onWindowFocus = () => {
+      focusTimer = window.setTimeout(() => {
+        if (settled) return;
+        const files = Array.from(input.files ?? []);
+        if (files.length) {
+          finish(() => resolve(collectImagesFromFiles(files)));
+          return;
+        }
+        onCancel();
+      }, 300);
+    };
+
+    input.addEventListener("change", onChange, { once: true });
+    input.addEventListener("cancel", onCancel as EventListener, { once: true });
+    window.addEventListener("focus", onWindowFocus, { once: true });
+    input.click();
+  });
 };
 
 const byNameAsc = (a: { name: string }, b: { name: string }): number =>
