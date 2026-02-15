@@ -1,5 +1,7 @@
 export type GallerySourceType = "gif" | "webp" | "other";
 
+export type GalleryViewMode = "all" | "album";
+
 export type GalleryImage = {
   id: string;
   name: string;
@@ -13,3 +15,11 @@ export type GalleryImage = {
 };
 
 export type CollectedImageMeta = Omit<GalleryImage, "id">;
+
+export type AlbumSummary = {
+  path: string;
+  title: string;
+  coverImageId: string;
+  coverRelativePath: string;
+  imageCount: number;
+};

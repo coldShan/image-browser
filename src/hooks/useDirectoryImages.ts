@@ -11,7 +11,10 @@ export type UseDirectoryImagesResult = {
   clearImages: () => void;
   ensurePreviewUrl: (id: string) => Promise<string | null>;
   releasePreviewUrl: (id: string) => void;
-  syncLightboxWindow: (index: number) => Promise<Record<string, string>>;
+  syncLightboxWindow: (
+    index: number,
+    targetImages?: GalleryImage[]
+  ) => Promise<Record<string, string>>;
   releaseAllLightboxUrls: () => void;
 };
 
@@ -51,8 +54,11 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
   }, []);
 
   const syncLightboxWindow = useCallback(
-    async (index: number): Promise<Record<string, string>> =>
-      managerRef.current.syncLightboxWindow(images, index),
+    async (
+      index: number,
+      targetImages: GalleryImage[] = images
+    ): Promise<Record<string, string>> =>
+      managerRef.current.syncLightboxWindow(targetImages, index),
     [images]
   );
 
