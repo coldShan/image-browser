@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GalleryImage } from "../types/gallery";
@@ -74,8 +74,17 @@ const hookResult = {
 };
 
 vi.mock("../components/GalleryGrid", () => ({
-  default: ({ images: current }: { images: GalleryImage[] }) => (
+  default: ({
+    images: current,
+    onOpen
+  }: {
+    images: GalleryImage[];
+    onOpen: (index: number) => void;
+  }) => (
     <div data-testid="gallery-grid">
+      <button type="button" onClick={() => onOpen(0)}>
+        打开第1张
+      </button>
       <p>{`当前列表 ${current.length} 张`}</p>
       <ul>
         {current.map((item) => (
@@ -110,7 +119,32 @@ vi.mock("../components/AlbumGrid", () => ({
 }));
 
 vi.mock("../components/ImageLightbox", () => ({
-  default: () => null
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="lightbox-open">lightbox-open</div> : null
+}));
+
+vi.mock("../components/AlbumDetailModal", () => ({
+  default: ({
+    open,
+    albumPath,
+    onClose,
+    onOpenImage
+  }: {
+    open: boolean;
+    albumPath: string | null;
+    onClose: () => void;
+    onOpenImage: (index: number) => void;
+  }) =>
+    open ? (
+      <div role="dialog" aria-label={`画集详情-${albumPath}`}>
+        <button type="button" onClick={() => onOpenImage(0)}>
+          弹窗打开第1张
+        </button>
+        <button type="button" onClick={onClose}>
+          触发弹窗关闭事件
+        </button>
+      </div>
+    ) : null
 }));
 
 describe("App view modes", () => {
@@ -144,13 +178,12 @@ describe("App view modes", () => {
 
     await user.click(screen.getByRole("tab", { name: "画集模式" }));
     await user.click(screen.getByRole("button", { name: "打开画集 album-a" }));
-
-    expect(screen.getByText("当前列表 2 张")).toBeInTheDocument();
-    expect(screen.queryByText("root-1.jpg")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "画集详情-album-a" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "全图模式" }));
 
     expect(screen.getByText("当前列表 2 张")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "画集详情-album-a" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "返回根路径全图" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "返回根路径全图" }));
@@ -176,5 +209,61 @@ describe("App view modes", () => {
       "true"
     );
     expect(screen.getByTestId("album-grid")).toBeInTheDocument();
+  });
+
+  it("opens album detail in fullscreen modal and keeps album list state", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: "画集模式" }));
+    await user.click(screen.getByRole("button", { name: "打开画集 album-a" }));
+
+    const dialog = screen.getByRole("dialog", { name: "画集详情-album-a" });
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByTestId("album-grid")).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "触发弹窗关闭事件" }));
+    expect(screen.queryByRole("dialog", { name: "画集详情-album-a" })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "画集模式" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(screen.getByTestId("album-grid")).toBeInTheDocument();
+  });
+
+  it("handles modal close event by closing lightbox first", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: "画集模式" }));
+    await user.click(screen.getByRole("button", { name: "打开画集 album-a" }));
+    await user.click(screen.getByRole("button", { name: "弹窗打开第1张" }));
+    expect(screen.getByTestId("lightbox-open")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "触发弹窗关闭事件" }));
+    expect(screen.queryByTestId("lightbox-open")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "画集详情-album-a" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "触发弹窗关闭事件" }));
+    expect(screen.queryByRole("dialog", { name: "画集详情-album-a" })).not.toBeInTheDocument();
+  });
+
+  it("closes lightbox before closing album detail on Escape", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: "画集模式" }));
+    await user.click(screen.getByRole("button", { name: "打开画集 album-a" }));
+    await user.click(screen.getByRole("button", { name: "弹窗打开第1张" }));
+
+    expect(screen.getByTestId("lightbox-open")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "画集详情-album-a" })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByTestId("lightbox-open")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "画集详情-album-a" })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "画集详情-album-a" })).not.toBeInTheDocument();
   });
 });

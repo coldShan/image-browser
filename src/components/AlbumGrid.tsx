@@ -13,14 +13,12 @@ type AlbumCardProps = {
   album: AlbumSummary;
   onOpenAlbum: (path: string) => void;
   ensurePreviewUrl: (id: string) => Promise<string | null>;
-  releasePreviewUrl: (id: string) => void;
 };
 
 function AlbumCard({
   album,
   onOpenAlbum,
-  ensurePreviewUrl,
-  releasePreviewUrl
+  ensurePreviewUrl
 }: AlbumCardProps) {
   const [coverSrc, setCoverSrc] = useState(BLANK_IMAGE);
 
@@ -35,9 +33,8 @@ function AlbumCard({
 
     return () => {
       cancelled = true;
-      releasePreviewUrl(album.coverImageId);
     };
-  }, [album.coverImageId, ensurePreviewUrl, releasePreviewUrl]);
+  }, [album.coverImageId, ensurePreviewUrl]);
 
   return (
     <button
@@ -66,8 +63,7 @@ function AlbumCard({
 export default function AlbumGrid({
   albums,
   onOpenAlbum,
-  ensurePreviewUrl,
-  releasePreviewUrl
+  ensurePreviewUrl
 }: AlbumGridProps) {
   if (!albums.length) return null;
 
@@ -79,7 +75,6 @@ export default function AlbumGrid({
           album={album}
           onOpenAlbum={onOpenAlbum}
           ensurePreviewUrl={ensurePreviewUrl}
-          releasePreviewUrl={releasePreviewUrl}
         />
       ))}
     </section>

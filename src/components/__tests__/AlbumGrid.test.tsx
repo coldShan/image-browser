@@ -44,4 +44,19 @@ describe("AlbumGrid", () => {
     await user.click(screen.getByRole("button", { name: "打开画集 album-a" }));
     expect(onOpenAlbum).toHaveBeenCalledWith("album-a");
   });
+
+  it("keeps cover cache when grid unmounts", () => {
+    const releasePreviewUrl = vi.fn();
+    const { unmount } = render(
+      <AlbumGrid
+        albums={albums}
+        onOpenAlbum={() => {}}
+        ensurePreviewUrl={async () => null}
+        releasePreviewUrl={releasePreviewUrl}
+      />
+    );
+
+    unmount();
+    expect(releasePreviewUrl).not.toHaveBeenCalled();
+  });
 });

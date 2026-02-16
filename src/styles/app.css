@@ -649,6 +649,186 @@ body::after {
   }
 }
 
+.album-detail-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+}
+
+.album-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255, 184, 130, 0.08), transparent 36%),
+    radial-gradient(circle at 82% 20%, rgba(98, 121, 201, 0.09), transparent 42%),
+    linear-gradient(168deg, rgba(9, 9, 12, 0.9), rgba(5, 5, 7, 0.97));
+  backdrop-filter: blur(8px);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.16;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.4) 0.4px, transparent 0.4px);
+    background-size: 3px 3px;
+    pointer-events: none;
+  }
+}
+
+.album-detail-viewport {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+}
+
+.album-detail-centre {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.album-detail-panel {
+  width: min(1440px, calc(100vw - 40px));
+  min-height: min(880px, calc(100dvh - 40px));
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background:
+    linear-gradient(142deg, rgba(21, 22, 30, 0.95), rgba(11, 12, 16, 0.94)),
+    radial-gradient(circle at 14% 12%, rgba(255, 176, 121, 0.08), transparent 30%);
+  box-shadow:
+    0 36px 84px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.album-detail-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
+    linear-gradient(180deg, rgba(8, 8, 11, 0.72), rgba(8, 8, 11, 0.34));
+}
+
+.album-detail-title-wrap {
+  min-width: 0;
+
+  .album-detail-kicker {
+    display: inline-block;
+    margin-bottom: 5px;
+    color: rgba(255, 222, 197, 0.76);
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  h2 {
+    margin: 0;
+    color: #fffaf0;
+    font-family: var(--font-display);
+    font-size: clamp(22px, 3.4vw, 38px);
+    line-height: 1.04;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: rgba(255, 236, 216, 0.78);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+}
+
+.album-detail-close {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff8ea;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: transform 140ms ease, background 140ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 206, 151, 0.95);
+    outline-offset: 2px;
+  }
+}
+
+.album-detail-body {
+  padding: 16px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.album-detail-empty {
+  min-height: min(42vh, 360px);
+  display: grid;
+  place-content: center;
+  text-align: center;
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.26);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+
+  h3 {
+    margin: 0;
+    color: #fff6e6;
+    font-family: var(--font-display);
+    font-size: 28px;
+  }
+
+  p {
+    margin: 8px 0 0;
+    color: rgba(255, 236, 218, 0.72);
+  }
+}
+
+.album-detail-fade-enter,
+.album-detail-fade-leave {
+  transition: opacity 220ms ease;
+}
+
+.album-detail-fade-from {
+  opacity: 0;
+}
+
+.album-detail-fade-to {
+  opacity: 1;
+}
+
+.album-detail-panel-enter,
+.album-detail-panel-leave {
+  transition:
+    opacity 260ms ease,
+    transform 260ms ease;
+}
+
+.album-detail-panel-from {
+  opacity: 0;
+  transform: translateY(14px) scale(0.985);
+}
+
+.album-detail-panel-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
 .lightbox-loading-card {
   width: min(320px, 80vw);
   padding: 20px 24px;
@@ -764,5 +944,27 @@ body::after {
 
   .album-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  .album-detail-centre {
+    padding: 8px;
+  }
+
+  .album-detail-panel {
+    width: min(100vw - 16px, 100%);
+    min-height: calc(100dvh - 16px);
+    border-radius: 18px;
+  }
+
+  .album-detail-header {
+    padding: 14px 14px 12px;
+  }
+
+  .album-detail-title-wrap h2 {
+    font-size: clamp(20px, 8vw, 34px);
+  }
+
+  .album-detail-body {
+    padding: 10px;
   }
 }

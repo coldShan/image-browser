@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AlbumGrid from "./components/AlbumGrid";
+import AlbumDetailModal from "./components/AlbumDetailModal";
 import GalleryGrid from "./components/GalleryGrid";
 import ImageLightbox from "./components/ImageLightbox";
 import { useDirectoryImages } from "./hooks/useDirectoryImages";
@@ -29,8 +30,10 @@ export default function App() {
   } = useDirectoryImages();
   const [viewMode, setViewMode] = useState<GalleryViewMode>("all");
   const [activeAlbumPath, setActiveAlbumPath] = useState<string | null>(null);
+  const [albumDetailOpen, setAlbumDetailOpen] = useState(false);
   const [allModePath, setAllModePath] = useState("");
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxScope, setLightboxScope] = useState<"all" | "album">("all");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lightboxUrls, setLightboxUrls] = useState<Record<string, string>>({});
   const [isScrolled, setIsScrolled] = useState(false);
@@ -38,17 +41,25 @@ export default function App() {
 
   const canPickImages = useMemo(hasImagePicker, []);
   const albums = useMemo(() => buildAlbums(images), [images]);
-  const visibleImages = useMemo(() => {
-    if (viewMode === "all") return filterImagesByPath(images, allModePath);
+  const allVisibleImages = useMemo(
+    () => filterImagesByPath(images, allModePath),
+    [allModePath, images]
+  );
+  const albumDetailImages = useMemo(() => {
     if (!activeAlbumPath) return [];
     return filterImagesByPath(images, activeAlbumPath);
-  }, [activeAlbumPath, allModePath, images, viewMode]);
-  const isAlbumListView = viewMode === "album" && activeAlbumPath === null;
-  const isAlbumDetailView = viewMode === "album" && activeAlbumPath !== null;
+  }, [activeAlbumPath, images]);
+  const lightboxImages = useMemo(
+    () => (lightboxScope === "album" ? albumDetailImages : allVisibleImages),
+    [albumDetailImages, allVisibleImages, lightboxScope]
+  );
+  const isAlbumListView = viewMode === "album";
 
   const resetBrowseContext = useCallback(() => {
     setActiveAlbumPath(null);
+    setAlbumDetailOpen(false);
     setAllModePath("");
+    setLightboxScope("all");
     setCurrentIndex(0);
     setLightboxOpen(false);
   }, []);
@@ -59,34 +70,65 @@ export default function App() {
   }, [resetBrowseContext]);
 
   const openAt = useCallback(
-    (index: number) => {
-      if (!visibleImages.length) return;
-      setCurrentIndex(Math.min(Math.max(index, 0), visibleImages.length - 1));
+    (index: number, scope: "all" | "album") => {
+      const target = scope === "album" ? albumDetailImages : allVisibleImages;
+      if (!target.length) return;
+      setLightboxScope(scope);
+      setCurrentIndex(Math.min(Math.max(index, 0), target.length - 1));
       setLightboxOpen(true);
     },
-    [visibleImages.length]
+    [albumDetailImages, allVisibleImages]
   );
+
+  const openAllAt = useCallback(
+    (index: number) => {
+      openAt(index, "all");
+    },
+    [openAt]
+  );
+
+  const openAlbumAt = useCallback(
+    (index: number) => {
+      openAt(index, "album");
+    },
+    [openAt]
+  );
+
+  const closeAlbumDetail = useCallback(() => {
+    setAlbumDetailOpen(false);
+    setLightboxOpen(false);
+    setLightboxScope("all");
+    setCurrentIndex(0);
+  }, []);
+
+  const onAlbumModalClose = useCallback(() => {
+    if (lightboxOpen) {
+      setLightboxOpen(false);
+      return;
+    }
+    closeAlbumDetail();
+  }, [closeAlbumDetail, lightboxOpen]);
 
   const switchToAllMode = useCallback(() => {
     setViewMode("all");
     if (activeAlbumPath) setAllModePath(activeAlbumPath);
+    closeAlbumDetail();
     setActiveAlbumPath(null);
-    setCurrentIndex(0);
-    setLightboxOpen(false);
-  }, [activeAlbumPath]);
+  }, [activeAlbumPath, closeAlbumDetail]);
 
   const switchToAlbumMode = useCallback(() => {
     setViewMode("album");
+    closeAlbumDetail();
     setActiveAlbumPath(null);
-    setCurrentIndex(0);
-    setLightboxOpen(false);
-  }, []);
+  }, [closeAlbumDetail]);
 
   const openAlbum = useCallback((path: string) => {
     setViewMode("album");
     setActiveAlbumPath(path);
+    setAlbumDetailOpen(true);
     setCurrentIndex(0);
     setLightboxOpen(false);
+    setLightboxScope("album");
   }, []);
 
   const onPickDirectory = useCallback(async () => {
@@ -100,21 +142,21 @@ export default function App() {
   }, [clearImages, resetViewState]);
 
   useEffect(() => {
-    if (!visibleImages.length) {
+    if (!lightboxImages.length) {
       setCurrentIndex(0);
       setLightboxOpen(false);
       return;
     }
-    if (currentIndex > visibleImages.length - 1) {
-      setCurrentIndex(visibleImages.length - 1);
+    if (currentIndex > lightboxImages.length - 1) {
+      setCurrentIndex(lightboxImages.length - 1);
     }
-  }, [currentIndex, visibleImages.length]);
+  }, [currentIndex, lightboxImages.length]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
 
     let cancelled = false;
-    void syncLightboxWindow(currentIndex, visibleImages).then((urls) => {
+    void syncLightboxWindow(currentIndex, lightboxImages).then((urls) => {
       if (cancelled) return;
       setLightboxUrls(urls);
     });
@@ -122,13 +164,27 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [currentIndex, lightboxOpen, syncLightboxWindow, visibleImages]);
+  }, [currentIndex, lightboxImages, lightboxOpen, syncLightboxWindow]);
 
   useEffect(() => {
     if (lightboxOpen) return;
     releaseAllLightboxUrls();
     setLightboxUrls({});
   }, [lightboxOpen, releaseAllLightboxUrls]);
+
+  useEffect(() => {
+    if (!albumDetailOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    const scrollbarGap = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = "hidden";
+    if (scrollbarGap > 0) document.body.style.paddingRight = `${scrollbarGap}px`;
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+    };
+  }, [albumDetailOpen]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -141,25 +197,41 @@ export default function App() {
         return;
       }
 
-      if (!visibleImages.length) return;
-
       if (!lightboxOpen && event.key === "Enter") {
         event.preventDefault();
-        openAt(currentIndex);
+        if (albumDetailOpen) {
+          openAlbumAt(currentIndex);
+          return;
+        }
+        if (viewMode === "all") {
+          openAllAt(currentIndex);
+        }
         return;
       }
 
-      if (!lightboxOpen) return;
-
       if (event.key === "Escape") {
         event.preventDefault();
-        setLightboxOpen(false);
+        if (lightboxOpen) {
+          setLightboxOpen(false);
+          return;
+        }
+        if (albumDetailOpen) {
+          closeAlbumDetail();
+        }
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [currentIndex, lightboxOpen, openAt, visibleImages.length]);
+  }, [
+    albumDetailOpen,
+    closeAlbumDetail,
+    currentIndex,
+    lightboxOpen,
+    openAlbumAt,
+    openAllAt,
+    viewMode
+  ]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -217,13 +289,9 @@ export default function App() {
                 返回根路径全图
               </button>
             )}
-            {isAlbumDetailView && (
-              <button
-                type="button"
-                className="text-button"
-                onClick={() => setActiveAlbumPath(null)}
-              >
-                返回画集列表
+            {albumDetailOpen && (
+              <button type="button" className="text-button" onClick={closeAlbumDetail}>
+                关闭画集详情
               </button>
             )}
           </div>
@@ -283,20 +351,14 @@ export default function App() {
         </section>
       )}
 
-      {(viewMode === "all" || isAlbumDetailView) && images.length > 0 && (
+      {viewMode === "all" && images.length > 0 && (
         <section className="gallery-shell">
-          <p className="status ok">
-            {viewMode === "all"
-              ? `已载入 ${visibleImages.length} 张图片`
-              : `画集「${activeAlbumPath}」共 ${visibleImages.length} 张图片`}
-          </p>
-          {viewMode === "all" && allModePath && (
-            <p className="path-tip">当前全图路径：{allModePath}</p>
-          )}
-          {visibleImages.length > 0 ? (
+          <p className="status ok">{`已载入 ${allVisibleImages.length} 张图片`}</p>
+          {allModePath && <p className="path-tip">当前全图路径：{allModePath}</p>}
+          {allVisibleImages.length > 0 ? (
             <GalleryGrid
-              images={visibleImages}
-              onOpen={openAt}
+              images={allVisibleImages}
+              onOpen={openAllAt}
               ensurePreviewUrl={ensurePreviewUrl}
               releasePreviewUrl={releasePreviewUrl}
             />
@@ -309,10 +371,20 @@ export default function App() {
         </section>
       )}
 
+      <AlbumDetailModal
+        open={albumDetailOpen && viewMode === "album"}
+        albumPath={activeAlbumPath}
+        images={albumDetailImages}
+        onClose={onAlbumModalClose}
+        onOpenImage={openAlbumAt}
+        ensurePreviewUrl={ensurePreviewUrl}
+        releasePreviewUrl={releasePreviewUrl}
+      />
+
       <ImageLightbox
         open={lightboxOpen}
         index={currentIndex}
-        images={visibleImages}
+        images={lightboxImages}
         lightboxUrls={lightboxUrls}
         onClose={() => setLightboxOpen(false)}
         onIndexChange={setCurrentIndex}
