@@ -103,5 +103,52 @@ describe("useDirectoryImages", () => {
       name: "photo.jpg",
       relativePath: "album/photo.jpg"
     });
+    expect(result.current.canRefreshCurrentDirectory).toBe(false);
+  });
+
+  it("refreshes by rescanning the current directory handle", async () => {
+    let scanCount = 0;
+    const first = {
+      kind: "file",
+      name: "photo-1.jpg",
+      getFile: vi.fn(async () => new File(["x"], "photo-1.jpg", { type: "image/jpeg" }))
+    } as unknown as FileSystemFileHandle;
+    const second = {
+      kind: "file",
+      name: "photo-2.jpg",
+      getFile: vi.fn(async () => new File(["x"], "photo-2.jpg", { type: "image/jpeg" }))
+    } as unknown as FileSystemFileHandle;
+    const directory = {
+      kind: "directory",
+      name: "root",
+      async *values() {
+        scanCount += 1;
+        yield (scanCount === 1 ? first : second) as unknown as FileSystemHandle;
+      }
+    } as unknown as FileSystemDirectoryHandle;
+    const picker = vi.fn(async () => directory);
+
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true,
+      writable: true,
+      value: picker
+    });
+
+    const { result } = renderHook(() => useDirectoryImages());
+
+    await act(async () => {
+      await result.current.pickDirectory();
+    });
+
+    expect(result.current.images[0].name).toBe("photo-1.jpg");
+    expect(result.current.canRefreshCurrentDirectory).toBe(true);
+    expect(picker).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.refreshCurrentDirectory();
+    });
+
+    expect(result.current.images[0].name).toBe("photo-2.jpg");
+    expect(picker).toHaveBeenCalledTimes(1);
   });
 });

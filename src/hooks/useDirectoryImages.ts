@@ -12,6 +12,8 @@ export type UseDirectoryImagesResult = {
   loading: boolean;
   error: string | null;
   pickDirectory: () => Promise<void>;
+  refreshCurrentDirectory: () => Promise<void>;
+  canRefreshCurrentDirectory: boolean;
   clearImages: () => void;
   ensurePreviewUrl: (id: string) => Promise<string | null>;
   releasePreviewUrl: (id: string) => void;
@@ -32,6 +34,7 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const managerRef = useRef(createResourceManager());
+  const currentDirectoryRef = useRef<FileSystemDirectoryHandle | null>(null);
 
   const imageMap = useMemo(
     () => new Map(images.map((image) => [image.id, image])),
@@ -40,6 +43,7 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
 
   const clearImages = useCallback(() => {
     managerRef.current.releaseAll();
+    currentDirectoryRef.current = null;
     setImages([]);
     setError(null);
   }, []);
@@ -70,22 +74,31 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
     managerRef.current.releaseAllLightbox();
   }, []);
 
+  const applyCollectedImages = useCallback((collected: CollectedImageMeta[]) => {
+    const nextImages = collected.map((item, index) => toGalleryImage(item, index));
+    managerRef.current.releaseAll();
+    setImages(nextImages);
+
+    if (!nextImages.length) {
+      setError("No image files found in this folder.");
+      return;
+    }
+    setError(null);
+  }, []);
+
   const pickDirectory = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
       const picker = getDirectoryPicker();
-      const collected = picker
-        ? await picker({ mode: "read" }).then(collectImagesFromDirectory)
-        : await openImageFilePicker();
-      const nextImages = collected.map((item, index) => toGalleryImage(item, index));
-
-      managerRef.current.releaseAll();
-      setImages(nextImages);
-
-      if (!nextImages.length) {
-        setError("No image files found in this folder.");
+      if (picker) {
+        const directory = await picker({ mode: "read" });
+        currentDirectoryRef.current = directory;
+        applyCollectedImages(await collectImagesFromDirectory(directory));
+      } else {
+        currentDirectoryRef.current = null;
+        applyCollectedImages(await openImageFilePicker());
       }
     } catch (error_) {
       const errorObject = error_ as DOMException | Error;
@@ -101,7 +114,29 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [applyCollectedImages]);
+
+  const refreshCurrentDirectory = useCallback(async () => {
+    if (!currentDirectoryRef.current) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      applyCollectedImages(await collectImagesFromDirectory(currentDirectoryRef.current));
+    } catch (error_) {
+      const errorObject = error_ as DOMException | Error;
+      if (
+        errorObject instanceof DOMException &&
+        errorObject.name === "NoModificationAllowedError"
+      ) {
+        setError("目录当前不可访问（可能只读或被系统占用），请重新选择其他目录。");
+        return;
+      }
+      setError(errorObject.message || "Failed to read folder.");
+    } finally {
+      setLoading(false);
+    }
+  }, [applyCollectedImages]);
 
   useEffect(
     () => () => {
@@ -115,6 +150,8 @@ export const useDirectoryImages = (): UseDirectoryImagesResult => {
     loading,
     error,
     pickDirectory,
+    refreshCurrentDirectory,
+    canRefreshCurrentDirectory: currentDirectoryRef.current !== null,
     clearImages,
     ensurePreviewUrl,
     releasePreviewUrl,

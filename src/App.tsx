@@ -22,6 +22,8 @@ export default function App() {
     loading,
     error,
     pickDirectory,
+    refreshCurrentDirectory,
+    canRefreshCurrentDirectory,
     clearImages,
     ensurePreviewUrl,
     releasePreviewUrl,
@@ -140,6 +142,10 @@ export default function App() {
     clearImages();
     resetViewState();
   }, [clearImages, resetViewState]);
+
+  const onRefreshCurrentDirectory = useCallback(async () => {
+    await refreshCurrentDirectory();
+  }, [refreshCurrentDirectory]);
 
   useEffect(() => {
     if (!lightboxImages.length) {
@@ -299,6 +305,13 @@ export default function App() {
           </button>
           <button type="button" onClick={onClearImages} disabled={!images.length && !error}>
             清空
+          </button>
+          <button
+            type="button"
+            onClick={() => void onRefreshCurrentDirectory()}
+            disabled={loading || !canRefreshCurrentDirectory}
+          >
+            刷新当前目录
           </button>
         </div>
       </header>

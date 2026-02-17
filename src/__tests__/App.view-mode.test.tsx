@@ -66,6 +66,8 @@ const hookResult = {
   loading: false,
   error: null,
   pickDirectory: vi.fn(async () => {}),
+  refreshCurrentDirectory: vi.fn(async () => {}),
+  canRefreshCurrentDirectory: true,
   clearImages: vi.fn(() => {}),
   ensurePreviewUrl: vi.fn(async () => "blob:preview"),
   releasePreviewUrl: vi.fn(() => {}),
@@ -209,6 +211,14 @@ describe("App view modes", () => {
       "true"
     );
     expect(screen.getByTestId("album-grid")).toBeInTheDocument();
+  });
+
+  it("refreshes current directory when refresh button is clicked", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "刷新当前目录" }));
+    expect(hookResult.refreshCurrentDirectory).toHaveBeenCalledTimes(1);
   });
 
   it("opens album detail in fullscreen modal and keeps album list state", async () => {
