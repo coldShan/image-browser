@@ -9,3 +9,7 @@ findings.md
 progress.md
 .wrangler/
 .dev.vars
+
+# Playwright local logs
+.playwright-cli/
+output/playwright/
