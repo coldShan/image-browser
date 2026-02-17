@@ -173,20 +173,6 @@ export default function App() {
   }, [lightboxOpen, releaseAllLightboxUrls]);
 
   useEffect(() => {
-    if (!albumDetailOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    const previousPaddingRight = document.body.style.paddingRight;
-    const scrollbarGap = window.innerWidth - document.documentElement.clientWidth;
-    document.body.style.overflow = "hidden";
-    if (scrollbarGap > 0) document.body.style.paddingRight = `${scrollbarGap}px`;
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.paddingRight = previousPaddingRight;
-    };
-  }, [albumDetailOpen]);
-
-  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;

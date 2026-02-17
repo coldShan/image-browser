@@ -231,6 +231,21 @@ describe("App view modes", () => {
     expect(screen.getByTestId("album-grid")).toBeInTheDocument();
   });
 
+  it("does not manually lock body scrolling when album detail opens", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(document.body.style.overflow).toBe("");
+    expect(document.body.style.paddingRight).toBe("");
+
+    await user.click(screen.getByRole("tab", { name: "画集模式" }));
+    await user.click(screen.getByRole("button", { name: "打开画集 album-a" }));
+
+    expect(screen.getByRole("dialog", { name: "画集详情-album-a" })).toBeInTheDocument();
+    expect(document.body.style.overflow).toBe("");
+    expect(document.body.style.paddingRight).toBe("");
+  });
+
   it("handles modal close event by closing lightbox first", async () => {
     const user = userEvent.setup();
     render(<App />);
