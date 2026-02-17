@@ -41,6 +41,11 @@ export default function ImageLightbox({
       carousel={{
         finite: images.length <= 1
       }}
+      animation={{
+        fade: 0,
+        swipe: 0,
+        navigation: 0
+      }}
     />
   );
 }
