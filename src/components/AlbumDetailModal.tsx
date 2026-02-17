@@ -1,5 +1,5 @@
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
-import { Fragment } from "react";
+import { Fragment, useCallback, useRef, type WheelEvent } from "react";
 import type { GalleryImage } from "../types/gallery";
 import GalleryGrid from "./GalleryGrid";
 
@@ -22,6 +22,26 @@ export default function AlbumDetailModal({
   ensurePreviewUrl,
   releasePreviewUrl
 }: AlbumDetailModalProps) {
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  const onPanelWheelCapture = useCallback((event: WheelEvent<HTMLDivElement>) => {
+    const body = bodyRef.current;
+    const target = event.target;
+    if (!body || !(target instanceof Node) || body.contains(target)) return;
+
+    const maxScrollTop = body.scrollHeight - body.clientHeight;
+    if (maxScrollTop <= 0) return;
+
+    const nextScrollTop = Math.min(
+      maxScrollTop,
+      Math.max(0, body.scrollTop + event.deltaY)
+    );
+
+    if (nextScrollTop === body.scrollTop) return;
+    body.scrollTop = nextScrollTop;
+    event.preventDefault();
+  }, []);
+
   return (
     <Transition appear show={open} as={Fragment}>
       <Dialog
@@ -53,7 +73,10 @@ export default function AlbumDetailModal({
               leaveFrom="album-detail-panel-to"
               leaveTo="album-detail-panel-from"
             >
-              <DialogPanel className="album-detail-panel">
+              <DialogPanel
+                className="album-detail-panel"
+                onWheelCapture={onPanelWheelCapture}
+              >
                 <header className="album-detail-header">
                   <div className="album-detail-title-wrap">
                     <span className="album-detail-kicker">album screen</span>
@@ -70,7 +93,7 @@ export default function AlbumDetailModal({
                   </button>
                 </header>
 
-                <div className="album-detail-body">
+                <div ref={bodyRef} className="album-detail-body">
                   {images.length > 0 ? (
                     <GalleryGrid
                       images={images}

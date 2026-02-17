@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { GalleryImage } from "../../types/gallery";
@@ -67,5 +67,30 @@ describe("AlbumDetailModal", () => {
 
     await user.click(screen.getByRole("button", { name: "关闭画集详情" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("routes wheel from header area to modal body scroll", async () => {
+    render(
+      <AlbumDetailModal
+        open
+        albumPath="album-a"
+        images={images}
+        onClose={() => {}}
+        onOpenImage={() => {}}
+        ensurePreviewUrl={async () => null}
+        releasePreviewUrl={() => {}}
+      />
+    );
+
+    const body = document.querySelector(".album-detail-body") as HTMLDivElement;
+    const headerTitle = await screen.findByRole("heading", { name: "album-a" });
+    const header = headerTitle.closest(".album-detail-header") as HTMLElement;
+
+    Object.defineProperty(body, "scrollHeight", { configurable: true, value: 1200 });
+    Object.defineProperty(body, "clientHeight", { configurable: true, value: 400 });
+    body.scrollTop = 120;
+
+    fireEvent.wheel(header, { deltaY: 240 });
+    expect(body.scrollTop).toBe(360);
   });
 });

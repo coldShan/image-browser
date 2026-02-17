@@ -1,0 +1,699 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - paragraph [ref=e6]: 本地图片档案馆
+      - heading "图像漫游" [level=1] [ref=e7]
+      - paragraph [ref=e8]: 选择一个本地文件夹，以画廊方式浏览图片并进入沉浸式大图查看。
+      - tablist "浏览模式切换" [ref=e9]:
+        - tab "全图模式" [selected] [ref=e10] [cursor=pointer]
+        - tab "画集模式" [ref=e11] [cursor=pointer]
+      - list [ref=e12]:
+        - listitem [ref=e13]: 回车打开
+        - listitem [ref=e14]: Esc 关闭
+        - listitem [ref=e15]: 左右切换
+        - listitem [ref=e16]: F 全屏
+    - generic [ref=e17]:
+      - button "选择文件夹或图片" [ref=e18] [cursor=pointer]
+      - button "清空" [ref=e19] [cursor=pointer]
+  - generic [ref=e23]:
+    - paragraph [ref=e24]: 已载入 129 张图片
+    - status: 正在快速滚动，停止后会自动加载当前区域图片。
+    - group "Photo album" [ref=e25]:
+      - generic [ref=e26]:
+        - button "打开 a-1.png" [ref=e27] [cursor=pointer]:
+          - img "a-1.png" [ref=e28]
+          - generic:
+            - strong: a-1.png
+            - generic: album-a/a-1.png
+        - button "打开 a-2.png" [ref=e29] [cursor=pointer]:
+          - img "a-2.png" [ref=e30]
+          - generic:
+            - strong: a-2.png
+            - generic: album-a/a-2.png
+        - button "打开 a-3.png" [ref=e31] [cursor=pointer]:
+          - img "a-3.png" [ref=e32]
+          - generic:
+            - strong: a-3.png
+            - generic: album-a/a-3.png
+        - button "打开 a-4.png" [ref=e33] [cursor=pointer]:
+          - img "a-4.png" [ref=e34]
+          - generic:
+            - strong: a-4.png
+            - generic: album-a/a-4.png
+      - generic [ref=e35]:
+        - button "打开 a-5.png" [ref=e36] [cursor=pointer]:
+          - img "a-5.png" [ref=e37]
+          - generic:
+            - strong: a-5.png
+            - generic: album-a/a-5.png
+        - button "打开 a-6.png" [ref=e38] [cursor=pointer]:
+          - img "a-6.png" [ref=e39]
+          - generic:
+            - strong: a-6.png
+            - generic: album-a/a-6.png
+        - button "打开 a-7.png" [ref=e40] [cursor=pointer]:
+          - img "a-7.png" [ref=e41]
+          - generic:
+            - strong: a-7.png
+            - generic: album-a/a-7.png
+        - button "打开 a-8.png" [ref=e42] [cursor=pointer]:
+          - img "a-8.png" [ref=e43]
+          - generic:
+            - strong: a-8.png
+            - generic: album-a/a-8.png
+      - generic [ref=e44]:
+        - button "打开 a-9.png" [ref=e45] [cursor=pointer]:
+          - img "a-9.png" [ref=e46]
+          - generic:
+            - strong: a-9.png
+            - generic: album-a/a-9.png
+        - button "打开 a-10.png" [ref=e47] [cursor=pointer]:
+          - img "a-10.png" [ref=e48]
+          - generic:
+            - strong: a-10.png
+            - generic: album-a/a-10.png
+        - button "打开 a-11.png" [ref=e49] [cursor=pointer]:
+          - img "a-11.png" [ref=e50]
+          - generic:
+            - strong: a-11.png
+            - generic: album-a/a-11.png
+        - button "打开 a-12.png" [ref=e51] [cursor=pointer]:
+          - img "a-12.png" [ref=e52]
+          - generic:
+            - strong: a-12.png
+            - generic: album-a/a-12.png
+      - generic [ref=e53]:
+        - button "打开 a-13.png" [ref=e54] [cursor=pointer]:
+          - img "a-13.png" [ref=e55]
+          - generic:
+            - strong: a-13.png
+            - generic: album-a/a-13.png
+        - button "打开 a-14.png" [ref=e56] [cursor=pointer]:
+          - img "a-14.png" [ref=e57]
+          - generic:
+            - strong: a-14.png
+            - generic: album-a/a-14.png
+        - button "打开 a-15.png" [ref=e58] [cursor=pointer]:
+          - img "a-15.png" [ref=e59]
+          - generic:
+            - strong: a-15.png
+            - generic: album-a/a-15.png
+        - button "打开 a-16.png" [ref=e60] [cursor=pointer]:
+          - img "a-16.png" [ref=e61]
+          - generic:
+            - strong: a-16.png
+            - generic: album-a/a-16.png
+      - generic [ref=e62]:
+        - button "打开 a-17.png" [ref=e63] [cursor=pointer]:
+          - img "a-17.png" [ref=e64]
+          - generic:
+            - strong: a-17.png
+            - generic: album-a/a-17.png
+        - button "打开 a-18.png" [ref=e65] [cursor=pointer]:
+          - img "a-18.png" [ref=e66]
+          - generic:
+            - strong: a-18.png
+            - generic: album-a/a-18.png
+        - button "打开 a-19.png" [ref=e67] [cursor=pointer]:
+          - img "a-19.png" [ref=e68]
+          - generic:
+            - strong: a-19.png
+            - generic: album-a/a-19.png
+        - button "打开 a-20.png" [ref=e69] [cursor=pointer]:
+          - img "a-20.png" [ref=e70]
+          - generic:
+            - strong: a-20.png
+            - generic: album-a/a-20.png
+      - generic [ref=e71]:
+        - button "打开 a-21.png" [ref=e72] [cursor=pointer]:
+          - img "a-21.png" [ref=e73]
+          - generic:
+            - strong: a-21.png
+            - generic: album-a/a-21.png
+        - button "打开 a-22.png" [ref=e74] [cursor=pointer]:
+          - img "a-22.png" [ref=e75]
+          - generic:
+            - strong: a-22.png
+            - generic: album-a/a-22.png
+        - button "打开 a-23.png" [ref=e76] [cursor=pointer]:
+          - img "a-23.png" [ref=e77]
+          - generic:
+            - strong: a-23.png
+            - generic: album-a/a-23.png
+        - button "打开 a-24.png" [ref=e78] [cursor=pointer]:
+          - img "a-24.png" [ref=e79]
+          - generic:
+            - strong: a-24.png
+            - generic: album-a/a-24.png
+      - generic [ref=e80]:
+        - button "打开 a-25.png" [ref=e81] [cursor=pointer]:
+          - img "a-25.png" [ref=e82]
+          - generic:
+            - strong: a-25.png
+            - generic: album-a/a-25.png
+        - button "打开 a-26.png" [ref=e83] [cursor=pointer]:
+          - img "a-26.png" [ref=e84]
+          - generic:
+            - strong: a-26.png
+            - generic: album-a/a-26.png
+        - button "打开 a-27.png" [ref=e85] [cursor=pointer]:
+          - img "a-27.png" [ref=e86]
+          - generic:
+            - strong: a-27.png
+            - generic: album-a/a-27.png
+        - button "打开 a-28.png" [ref=e87] [cursor=pointer]:
+          - img "a-28.png" [ref=e88]
+          - generic:
+            - strong: a-28.png
+            - generic: album-a/a-28.png
+      - generic [ref=e89]:
+        - button "打开 a-29.png" [ref=e90] [cursor=pointer]:
+          - img "a-29.png" [ref=e91]
+          - generic:
+            - strong: a-29.png
+            - generic: album-a/a-29.png
+        - button "打开 a-30.png" [ref=e92] [cursor=pointer]:
+          - img "a-30.png" [ref=e93]
+          - generic:
+            - strong: a-30.png
+            - generic: album-a/a-30.png
+        - button "打开 a-31.png" [ref=e94] [cursor=pointer]:
+          - img "a-31.png" [ref=e95]
+          - generic:
+            - strong: a-31.png
+            - generic: album-a/a-31.png
+        - button "打开 a-32.png" [ref=e96] [cursor=pointer]:
+          - img "a-32.png" [ref=e97]
+          - generic:
+            - strong: a-32.png
+            - generic: album-a/a-32.png
+      - generic [ref=e98]:
+        - button "打开 a-33.png" [ref=e99] [cursor=pointer]:
+          - img "a-33.png" [ref=e100]
+          - generic:
+            - strong: a-33.png
+            - generic: album-a/a-33.png
+        - button "打开 a-34.png" [ref=e101] [cursor=pointer]:
+          - img "a-34.png" [ref=e102]
+          - generic:
+            - strong: a-34.png
+            - generic: album-a/a-34.png
+        - button "打开 a-35.png" [ref=e103] [cursor=pointer]:
+          - img "a-35.png" [ref=e104]
+          - generic:
+            - strong: a-35.png
+            - generic: album-a/a-35.png
+        - button "打开 a-36.png" [ref=e105] [cursor=pointer]:
+          - img "a-36.png" [ref=e106]
+          - generic:
+            - strong: a-36.png
+            - generic: album-a/a-36.png
+      - generic [ref=e107]:
+        - button "打开 a-37.png" [ref=e108] [cursor=pointer]:
+          - img "a-37.png" [ref=e109]
+          - generic:
+            - strong: a-37.png
+            - generic: album-a/a-37.png
+        - button "打开 a-38.png" [ref=e110] [cursor=pointer]:
+          - img "a-38.png" [ref=e111]
+          - generic:
+            - strong: a-38.png
+            - generic: album-a/a-38.png
+        - button "打开 a-39.png" [ref=e112] [cursor=pointer]:
+          - img "a-39.png" [ref=e113]
+          - generic:
+            - strong: a-39.png
+            - generic: album-a/a-39.png
+        - button "打开 a-40.png" [ref=e114] [cursor=pointer]:
+          - img "a-40.png" [ref=e115]
+          - generic:
+            - strong: a-40.png
+            - generic: album-a/a-40.png
+      - generic [ref=e116]:
+        - button "打开 a-41.png" [ref=e117] [cursor=pointer]:
+          - img "a-41.png" [ref=e118]
+          - generic:
+            - strong: a-41.png
+            - generic: album-a/a-41.png
+        - button "打开 a-42.png" [ref=e119] [cursor=pointer]:
+          - img "a-42.png" [ref=e120]
+          - generic:
+            - strong: a-42.png
+            - generic: album-a/a-42.png
+        - button "打开 a-43.png" [ref=e121] [cursor=pointer]:
+          - img "a-43.png" [ref=e122]
+          - generic:
+            - strong: a-43.png
+            - generic: album-a/a-43.png
+        - button "打开 a-44.png" [ref=e123] [cursor=pointer]:
+          - img "a-44.png" [ref=e124]
+          - generic:
+            - strong: a-44.png
+            - generic: album-a/a-44.png
+      - generic [ref=e125]:
+        - button "打开 a-45.png" [ref=e126] [cursor=pointer]:
+          - img "a-45.png" [ref=e127]
+          - generic:
+            - strong: a-45.png
+            - generic: album-a/a-45.png
+        - button "打开 a-46.png" [ref=e128] [cursor=pointer]:
+          - img "a-46.png" [ref=e129]
+          - generic:
+            - strong: a-46.png
+            - generic: album-a/a-46.png
+        - button "打开 a-47.png" [ref=e130] [cursor=pointer]:
+          - img "a-47.png" [ref=e131]
+          - generic:
+            - strong: a-47.png
+            - generic: album-a/a-47.png
+        - button "打开 a-48.png" [ref=e132] [cursor=pointer]:
+          - img "a-48.png" [ref=e133]
+          - generic:
+            - strong: a-48.png
+            - generic: album-a/a-48.png
+      - generic [ref=e134]:
+        - button "打开 a-49.png" [ref=e135] [cursor=pointer]:
+          - img "a-49.png" [ref=e136]
+          - generic:
+            - strong: a-49.png
+            - generic: album-a/a-49.png
+        - button "打开 a-50.png" [ref=e137] [cursor=pointer]:
+          - img "a-50.png" [ref=e138]
+          - generic:
+            - strong: a-50.png
+            - generic: album-a/a-50.png
+        - button "打开 a-51.png" [ref=e139] [cursor=pointer]:
+          - img "a-51.png" [ref=e140]
+          - generic:
+            - strong: a-51.png
+            - generic: album-a/a-51.png
+        - button "打开 a-52.png" [ref=e141] [cursor=pointer]:
+          - img "a-52.png" [ref=e142]
+          - generic:
+            - strong: a-52.png
+            - generic: album-a/a-52.png
+      - generic [ref=e143]:
+        - button "打开 a-53.png" [ref=e144] [cursor=pointer]:
+          - img "a-53.png" [ref=e145]
+          - generic:
+            - strong: a-53.png
+            - generic: album-a/a-53.png
+        - button "打开 a-54.png" [ref=e146] [cursor=pointer]:
+          - img "a-54.png" [ref=e147]
+          - generic:
+            - strong: a-54.png
+            - generic: album-a/a-54.png
+        - button "打开 a-55.png" [ref=e148] [cursor=pointer]:
+          - img "a-55.png" [ref=e149]
+          - generic:
+            - strong: a-55.png
+            - generic: album-a/a-55.png
+        - button "打开 a-56.png" [ref=e150] [cursor=pointer]:
+          - img "a-56.png" [ref=e151]
+          - generic:
+            - strong: a-56.png
+            - generic: album-a/a-56.png
+      - generic [ref=e152]:
+        - button "打开 a-57.png" [ref=e153] [cursor=pointer]:
+          - img "a-57.png" [ref=e154]
+          - generic:
+            - strong: a-57.png
+            - generic: album-a/a-57.png
+        - button "打开 a-58.png" [ref=e155] [cursor=pointer]:
+          - img "a-58.png" [ref=e156]
+          - generic:
+            - strong: a-58.png
+            - generic: album-a/a-58.png
+        - button "打开 a-59.png" [ref=e157] [cursor=pointer]:
+          - img "a-59.png" [ref=e158]
+          - generic:
+            - strong: a-59.png
+            - generic: album-a/a-59.png
+        - button "打开 a-60.png" [ref=e159] [cursor=pointer]:
+          - img "a-60.png" [ref=e160]
+          - generic:
+            - strong: a-60.png
+            - generic: album-a/a-60.png
+      - generic [ref=e161]:
+        - button "打开 a-61.png" [ref=e162] [cursor=pointer]:
+          - img "a-61.png" [ref=e163]
+          - generic:
+            - strong: a-61.png
+            - generic: album-a/a-61.png
+        - button "打开 a-62.png" [ref=e164] [cursor=pointer]:
+          - img "a-62.png" [ref=e165]
+          - generic:
+            - strong: a-62.png
+            - generic: album-a/a-62.png
+        - button "打开 a-63.png" [ref=e166] [cursor=pointer]:
+          - img "a-63.png" [ref=e167]
+          - generic:
+            - strong: a-63.png
+            - generic: album-a/a-63.png
+        - button "打开 a-64.png" [ref=e168] [cursor=pointer]:
+          - img "a-64.png" [ref=e169]
+          - generic:
+            - strong: a-64.png
+            - generic: album-a/a-64.png
+      - generic [ref=e170]:
+        - button "打开 a-65.png" [ref=e171] [cursor=pointer]:
+          - img "a-65.png" [ref=e172]
+          - generic:
+            - strong: a-65.png
+            - generic: album-a/a-65.png
+        - button "打开 a-66.png" [ref=e173] [cursor=pointer]:
+          - img "a-66.png" [ref=e174]
+          - generic:
+            - strong: a-66.png
+            - generic: album-a/a-66.png
+        - button "打开 a-67.png" [ref=e175] [cursor=pointer]:
+          - img "a-67.png" [ref=e176]
+          - generic:
+            - strong: a-67.png
+            - generic: album-a/a-67.png
+        - button "打开 a-68.png" [ref=e177] [cursor=pointer]:
+          - img "a-68.png" [ref=e178]
+          - generic:
+            - strong: a-68.png
+            - generic: album-a/a-68.png
+      - generic [ref=e179]:
+        - button "打开 a-69.png" [ref=e180] [cursor=pointer]:
+          - img "a-69.png" [ref=e181]
+          - generic:
+            - strong: a-69.png
+            - generic: album-a/a-69.png
+        - button "打开 a-70.png" [ref=e182] [cursor=pointer]:
+          - img "a-70.png" [ref=e183]
+          - generic:
+            - strong: a-70.png
+            - generic: album-a/a-70.png
+        - button "打开 a-71.png" [ref=e184] [cursor=pointer]:
+          - img "a-71.png" [ref=e185]
+          - generic:
+            - strong: a-71.png
+            - generic: album-a/a-71.png
+        - button "打开 a-72.png" [ref=e186] [cursor=pointer]:
+          - img "a-72.png" [ref=e187]
+          - generic:
+            - strong: a-72.png
+            - generic: album-a/a-72.png
+      - generic [ref=e188]:
+        - button "打开 a-73.png" [ref=e189] [cursor=pointer]:
+          - img "a-73.png" [ref=e190]
+          - generic:
+            - strong: a-73.png
+            - generic: album-a/a-73.png
+        - button "打开 a-74.png" [ref=e191] [cursor=pointer]:
+          - img "a-74.png" [ref=e192]
+          - generic:
+            - strong: a-74.png
+            - generic: album-a/a-74.png
+        - button "打开 a-75.png" [ref=e193] [cursor=pointer]:
+          - img "a-75.png" [ref=e194]
+          - generic:
+            - strong: a-75.png
+            - generic: album-a/a-75.png
+        - button "打开 a-76.png" [ref=e195] [cursor=pointer]:
+          - img "a-76.png" [ref=e196]
+          - generic:
+            - strong: a-76.png
+            - generic: album-a/a-76.png
+      - generic [ref=e197]:
+        - button "打开 a-77.png" [ref=e198] [cursor=pointer]:
+          - img "a-77.png" [ref=e199]
+          - generic:
+            - strong: a-77.png
+            - generic: album-a/a-77.png
+        - button "打开 a-78.png" [ref=e200] [cursor=pointer]:
+          - img "a-78.png" [ref=e201]
+          - generic:
+            - strong: a-78.png
+            - generic: album-a/a-78.png
+        - button "打开 a-79.png" [ref=e202] [cursor=pointer]:
+          - img "a-79.png" [ref=e203]
+          - generic:
+            - strong: a-79.png
+            - generic: album-a/a-79.png
+        - button "打开 a-80.png" [ref=e204] [cursor=pointer]:
+          - img "a-80.png" [ref=e205]
+          - generic:
+            - strong: a-80.png
+            - generic: album-a/a-80.png
+      - generic [ref=e206]:
+        - button "打开 a-81.png" [ref=e207] [cursor=pointer]:
+          - img "a-81.png" [ref=e208]
+          - generic:
+            - strong: a-81.png
+            - generic: album-a/a-81.png
+        - button "打开 a-82.png" [ref=e209] [cursor=pointer]:
+          - img "a-82.png" [ref=e210]
+          - generic:
+            - strong: a-82.png
+            - generic: album-a/a-82.png
+        - button "打开 a-83.png" [ref=e211] [cursor=pointer]:
+          - img "a-83.png" [ref=e212]
+          - generic:
+            - strong: a-83.png
+            - generic: album-a/a-83.png
+        - button "打开 a-84.png" [ref=e213] [cursor=pointer]:
+          - img "a-84.png" [ref=e214]
+          - generic:
+            - strong: a-84.png
+            - generic: album-a/a-84.png
+      - generic [ref=e215]:
+        - button "打开 a-85.png" [ref=e216] [cursor=pointer]:
+          - img "a-85.png" [ref=e217]
+          - generic:
+            - strong: a-85.png
+            - generic: album-a/a-85.png
+        - button "打开 a-86.png" [ref=e218] [cursor=pointer]:
+          - img "a-86.png" [ref=e219]
+          - generic:
+            - strong: a-86.png
+            - generic: album-a/a-86.png
+        - button "打开 a-87.png" [ref=e220] [cursor=pointer]:
+          - img "a-87.png" [ref=e221]
+          - generic:
+            - strong: a-87.png
+            - generic: album-a/a-87.png
+        - button "打开 a-88.png" [ref=e222] [cursor=pointer]:
+          - img "a-88.png" [ref=e223]
+          - generic:
+            - strong: a-88.png
+            - generic: album-a/a-88.png
+      - generic [ref=e224]:
+        - button "打开 a-89.png" [ref=e225] [cursor=pointer]:
+          - img "a-89.png" [ref=e226]
+          - generic:
+            - strong: a-89.png
+            - generic: album-a/a-89.png
+        - button "打开 a-90.png" [ref=e227] [cursor=pointer]:
+          - img "a-90.png" [ref=e228]
+          - generic:
+            - strong: a-90.png
+            - generic: album-a/a-90.png
+        - button "打开 a-91.png" [ref=e229] [cursor=pointer]:
+          - img "a-91.png" [ref=e230]
+          - generic:
+            - strong: a-91.png
+            - generic: album-a/a-91.png
+        - button "打开 a-92.png" [ref=e231] [cursor=pointer]:
+          - img "a-92.png" [ref=e232]
+          - generic:
+            - strong: a-92.png
+            - generic: album-a/a-92.png
+      - generic [ref=e233]:
+        - button "打开 a-93.png" [ref=e234] [cursor=pointer]:
+          - img "a-93.png" [ref=e235]
+          - generic:
+            - strong: a-93.png
+            - generic: album-a/a-93.png
+        - button "打开 a-94.png" [ref=e236] [cursor=pointer]:
+          - img "a-94.png" [ref=e237]
+          - generic:
+            - strong: a-94.png
+            - generic: album-a/a-94.png
+        - button "打开 a-95.png" [ref=e238] [cursor=pointer]:
+          - img "a-95.png" [ref=e239]
+          - generic:
+            - strong: a-95.png
+            - generic: album-a/a-95.png
+        - button "打开 a-96.png" [ref=e240] [cursor=pointer]:
+          - img "a-96.png" [ref=e241]
+          - generic:
+            - strong: a-96.png
+            - generic: album-a/a-96.png
+      - generic [ref=e242]:
+        - button "打开 a-97.png" [ref=e243] [cursor=pointer]:
+          - img "a-97.png" [ref=e244]
+          - generic:
+            - strong: a-97.png
+            - generic: album-a/a-97.png
+        - button "打开 a-98.png" [ref=e245] [cursor=pointer]:
+          - img "a-98.png" [ref=e246]
+          - generic:
+            - strong: a-98.png
+            - generic: album-a/a-98.png
+        - button "打开 a-99.png" [ref=e247] [cursor=pointer]:
+          - img "a-99.png" [ref=e248]
+          - generic:
+            - strong: a-99.png
+            - generic: album-a/a-99.png
+        - button "打开 a-100.png" [ref=e249] [cursor=pointer]:
+          - img "a-100.png" [ref=e250]
+          - generic:
+            - strong: a-100.png
+            - generic: album-a/a-100.png
+      - generic [ref=e251]:
+        - button "打开 a-101.png" [ref=e252] [cursor=pointer]:
+          - img "a-101.png" [ref=e253]
+          - generic:
+            - strong: a-101.png
+            - generic: album-a/a-101.png
+        - button "打开 a-102.png" [ref=e254] [cursor=pointer]:
+          - img "a-102.png" [ref=e255]
+          - generic:
+            - strong: a-102.png
+            - generic: album-a/a-102.png
+        - button "打开 a-103.png" [ref=e256] [cursor=pointer]:
+          - img "a-103.png" [ref=e257]
+          - generic:
+            - strong: a-103.png
+            - generic: album-a/a-103.png
+        - button "打开 a-104.png" [ref=e258] [cursor=pointer]:
+          - img "a-104.png" [ref=e259]
+          - generic:
+            - strong: a-104.png
+            - generic: album-a/a-104.png
+      - generic [ref=e260]:
+        - button "打开 a-105.png" [ref=e261] [cursor=pointer]:
+          - img "a-105.png" [ref=e262]
+          - generic:
+            - strong: a-105.png
+            - generic: album-a/a-105.png
+        - button "打开 a-106.png" [ref=e263] [cursor=pointer]:
+          - img "a-106.png" [ref=e264]
+          - generic:
+            - strong: a-106.png
+            - generic: album-a/a-106.png
+        - button "打开 a-107.png" [ref=e265] [cursor=pointer]:
+          - img "a-107.png" [ref=e266]
+          - generic:
+            - strong: a-107.png
+            - generic: album-a/a-107.png
+        - button "打开 a-108.png" [ref=e267] [cursor=pointer]:
+          - img "a-108.png" [ref=e268]
+          - generic:
+            - strong: a-108.png
+            - generic: album-a/a-108.png
+      - generic [ref=e269]:
+        - button "打开 a-109.png" [ref=e270] [cursor=pointer]:
+          - img "a-109.png" [ref=e271]
+          - generic:
+            - strong: a-109.png
+            - generic: album-a/a-109.png
+        - button "打开 a-110.png" [ref=e272] [cursor=pointer]:
+          - img "a-110.png" [ref=e273]
+          - generic:
+            - strong: a-110.png
+            - generic: album-a/a-110.png
+        - button "打开 a-111.png" [ref=e274] [cursor=pointer]:
+          - img "a-111.png" [ref=e275]
+          - generic:
+            - strong: a-111.png
+            - generic: album-a/a-111.png
+        - button "打开 a-112.png" [ref=e276] [cursor=pointer]:
+          - img "a-112.png" [ref=e277]
+          - generic:
+            - strong: a-112.png
+            - generic: album-a/a-112.png
+      - generic [ref=e278]:
+        - button "打开 a-113.png" [ref=e279] [cursor=pointer]:
+          - img "a-113.png" [ref=e280]
+          - generic:
+            - strong: a-113.png
+            - generic: album-a/a-113.png
+        - button "打开 a-114.png" [ref=e281] [cursor=pointer]:
+          - img "a-114.png" [ref=e282]
+          - generic:
+            - strong: a-114.png
+            - generic: album-a/a-114.png
+        - button "打开 a-115.png" [ref=e283] [cursor=pointer]:
+          - img "a-115.png" [ref=e284]
+          - generic:
+            - strong: a-115.png
+            - generic: album-a/a-115.png
+        - button "打开 a-116.png" [ref=e285] [cursor=pointer]:
+          - img "a-116.png" [ref=e286]
+          - generic:
+            - strong: a-116.png
+            - generic: album-a/a-116.png
+      - generic [ref=e287]:
+        - button "打开 a-117.png" [ref=e288] [cursor=pointer]:
+          - img "a-117.png" [ref=e289]
+          - generic:
+            - strong: a-117.png
+            - generic: album-a/a-117.png
+        - button "打开 a-118.png" [ref=e290] [cursor=pointer]:
+          - img "a-118.png" [ref=e291]
+          - generic:
+            - strong: a-118.png
+            - generic: album-a/a-118.png
+        - button "打开 a-119.png" [ref=e292] [cursor=pointer]:
+          - img "a-119.png" [ref=e293]
+          - generic:
+            - strong: a-119.png
+            - generic: album-a/a-119.png
+        - button "打开 a-120.png" [ref=e294] [cursor=pointer]:
+          - img "a-120.png" [ref=e295]
+          - generic:
+            - strong: a-120.png
+            - generic: album-a/a-120.png
+      - generic [ref=e296]:
+        - button "打开 b-1.png" [ref=e297] [cursor=pointer]:
+          - img "b-1.png" [ref=e298]
+          - generic:
+            - strong: b-1.png
+            - generic: album-b/b-1.png
+        - button "打开 b-2.png" [ref=e299] [cursor=pointer]:
+          - img "b-2.png" [ref=e300]
+          - generic:
+            - strong: b-2.png
+            - generic: album-b/b-2.png
+        - button "打开 b-3.png" [ref=e301] [cursor=pointer]:
+          - img "b-3.png" [ref=e302]
+          - generic:
+            - strong: b-3.png
+            - generic: album-b/b-3.png
+      - generic [ref=e303]:
+        - button "打开 b-4.png" [ref=e304] [cursor=pointer]:
+          - img "b-4.png" [ref=e305]
+          - generic:
+            - strong: b-4.png
+            - generic: album-b/b-4.png
+        - button "打开 b-5.png" [ref=e306] [cursor=pointer]:
+          - img "b-5.png" [ref=e307]
+          - generic:
+            - strong: b-5.png
+            - generic: album-b/b-5.png
+        - button "打开 b-6.png" [ref=e308] [cursor=pointer]:
+          - img "b-6.png" [ref=e309]
+          - generic:
+            - strong: b-6.png
+            - generic: album-b/b-6.png
+      - generic [ref=e310]:
+        - button "打开 b-7.png" [ref=e311] [cursor=pointer]:
+          - img "b-7.png" [ref=e312]
+          - generic:
+            - strong: b-7.png
+            - generic: album-b/b-7.png
+        - button "打开 b-8.png" [ref=e313] [cursor=pointer]:
+          - img "b-8.png" [ref=e314]
+          - generic:
+            - strong: b-8.png
+            - generic: album-b/b-8.png
+        - button "打开 root-1.png" [ref=e315] [cursor=pointer]:
+          - img "root-1.png" [ref=e316]
+          - generic:
+            - strong: root-1.png
+            - generic: root-1.png

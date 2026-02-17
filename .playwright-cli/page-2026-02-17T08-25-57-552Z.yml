@@ -1,0 +1,30 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - paragraph [ref=e6]: 本地图片档案馆
+      - heading "图像漫游" [level=1] [ref=e7]
+      - paragraph [ref=e8]: 选择一个本地文件夹，以画廊方式浏览图片并进入沉浸式大图查看。
+      - tablist "浏览模式切换" [ref=e9]:
+        - tab "全图模式" [ref=e10] [cursor=pointer]
+        - tab "画集模式" [active] [selected] [ref=e11] [cursor=pointer]
+      - list [ref=e12]:
+        - listitem [ref=e13]: 回车打开
+        - listitem [ref=e14]: Esc 关闭
+        - listitem [ref=e15]: 左右切换
+        - listitem [ref=e16]: F 全屏
+    - generic [ref=e17]:
+      - button "选择文件夹或图片" [ref=e18] [cursor=pointer]
+      - button "清空" [ref=e19] [cursor=pointer]
+  - generic [ref=e317]:
+    - paragraph [ref=e318]: 共 2 个画集
+    - region "画集列表" [ref=e319]:
+      - button "打开画集 album-a" [ref=e320] [cursor=pointer]:
+        - img "album-a/a-1.png" [ref=e322]
+        - generic [ref=e323]:
+          - strong [ref=e324]: album-a
+          - generic [ref=e325]: 120 张图片
+      - button "打开画集 album-b" [ref=e326] [cursor=pointer]:
+        - img "album-b/b-1.png" [ref=e328]
+        - generic [ref=e329]:
+          - strong [ref=e330]: album-b
+          - generic [ref=e331]: 8 张图片
