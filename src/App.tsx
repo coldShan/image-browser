@@ -8,6 +8,9 @@ import type { GalleryViewMode } from "./types/gallery";
 import { buildAlbums, filterImagesByPath } from "./utils/albums";
 import { hasImagePicker } from "./utils/fileSystem";
 
+const HEADER_SCROLL_THRESHOLD = 80;
+const HEADER_SCROLL_DEBOUNCE_MS = 80;
+
 const toggleFullscreen = async (): Promise<void> => {
   if (!document.fullscreenElement) {
     await document.documentElement.requestFullscreen();
@@ -226,18 +229,36 @@ export default function App() {
   ]);
 
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY;
-      setIsScrolled(y > 80);
+    let scrolledTimer: ReturnType<typeof window.setTimeout> | null = null;
 
+    const applyScrolledState = (y: number) => {
+      setIsScrolled(y > HEADER_SCROLL_THRESHOLD);
+    };
+
+    const updateScrollProgress = (y: number) => {
       const doc = document.documentElement;
       const max = Math.max(doc.scrollHeight - window.innerHeight, 1);
       setScrollProgress(Math.min(Math.max(y / max, 0), 1));
     };
 
-    onScroll();
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (scrolledTimer !== null) window.clearTimeout(scrolledTimer);
+      scrolledTimer = window.setTimeout(() => {
+        applyScrolledState(y);
+        scrolledTimer = null;
+      }, HEADER_SCROLL_DEBOUNCE_MS);
+      updateScrollProgress(y);
+    };
+
+    const initialY = window.scrollY;
+    applyScrolledState(initialY);
+    updateScrollProgress(initialY);
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (scrolledTimer !== null) window.clearTimeout(scrolledTimer);
+    };
   }, []);
 
   return (

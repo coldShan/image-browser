@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GalleryImage } from "../types/gallery";
@@ -290,5 +290,45 @@ describe("App view modes", () => {
 
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog", { name: "画集详情-album-a" })).not.toBeInTheDocument();
+  });
+
+  it("debounces compact header switch on scroll", () => {
+    vi.useFakeTimers();
+    const originalScrollY = Object.getOwnPropertyDescriptor(window, "scrollY");
+    let y = 0;
+    Object.defineProperty(window, "scrollY", {
+      configurable: true,
+      get: () => y
+    });
+
+    try {
+      render(<App />);
+      const header = screen.getByRole("banner");
+      expect(header).not.toHaveClass("is-scrolled");
+
+      y = 120;
+      fireEvent.scroll(window);
+
+      expect(header).not.toHaveClass("is-scrolled");
+      act(() => {
+        vi.advanceTimersByTime(79);
+      });
+      expect(header).not.toHaveClass("is-scrolled");
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(header).toHaveClass("is-scrolled");
+    } finally {
+      if (originalScrollY) {
+        Object.defineProperty(window, "scrollY", originalScrollY);
+      } else {
+        delete (window as Partial<Window>).scrollY;
+      }
+      act(() => {
+        vi.runOnlyPendingTimers();
+      });
+      vi.useRealTimers();
+    }
   });
 });
