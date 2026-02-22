@@ -75,6 +75,14 @@ const hookResult = {
   releaseAllLightboxUrls: vi.fn(() => {})
 };
 
+type LightboxMockProps = {
+  open: boolean;
+  index: number;
+  onIndexChange: (index: number) => void;
+};
+
+let latestLightboxProps: LightboxMockProps | null = null;
+
 vi.mock("../components/GalleryGrid", () => ({
   default: ({
     images: current,
@@ -121,8 +129,10 @@ vi.mock("../components/AlbumGrid", () => ({
 }));
 
 vi.mock("../components/ImageLightbox", () => ({
-  default: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="lightbox-open">lightbox-open</div> : null
+  default: (props: LightboxMockProps) => {
+    latestLightboxProps = props;
+    return props.open ? <div data-testid="lightbox-open">lightbox-open</div> : null;
+  }
 }));
 
 vi.mock("../components/AlbumDetailModal", () => ({
@@ -152,6 +162,7 @@ vi.mock("../components/AlbumDetailModal", () => ({
 describe("App view modes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    latestLightboxProps = null;
     vi.mocked(useDirectoryImages).mockReturnValue(hookResult);
   });
 
@@ -325,6 +336,47 @@ describe("App view modes", () => {
       } else {
         delete (window as Partial<Window>).scrollY;
       }
+      act(() => {
+        vi.runOnlyPendingTimers();
+      });
+      vi.useRealTimers();
+    }
+  });
+
+  it("throttles lightbox index updates to at most once per 30ms", async () => {
+    vi.useFakeTimers();
+    try {
+      render(<App />);
+
+      fireEvent.click(screen.getByRole("button", { name: "打开第1张" }));
+      expect(screen.getByTestId("lightbox-open")).toBeInTheDocument();
+
+      await act(async () => {});
+      hookResult.syncLightboxWindow.mockClear();
+
+      act(() => {
+        latestLightboxProps?.onIndexChange(1);
+        latestLightboxProps?.onIndexChange(2);
+        latestLightboxProps?.onIndexChange(3);
+      });
+      await act(async () => {});
+
+      expect(hookResult.syncLightboxWindow).toHaveBeenCalledTimes(1);
+      expect(hookResult.syncLightboxWindow).toHaveBeenLastCalledWith(1, expect.any(Array));
+
+      act(() => {
+        vi.advanceTimersByTime(29);
+      });
+      expect(hookResult.syncLightboxWindow).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      await act(async () => {});
+
+      expect(hookResult.syncLightboxWindow).toHaveBeenCalledTimes(2);
+      expect(hookResult.syncLightboxWindow).toHaveBeenLastCalledWith(3, expect.any(Array));
+    } finally {
       act(() => {
         vi.runOnlyPendingTimers();
       });

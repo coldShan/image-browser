@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AlbumGrid from "./components/AlbumGrid";
 import AlbumDetailModal from "./components/AlbumDetailModal";
 import GalleryGrid from "./components/GalleryGrid";
@@ -10,6 +10,7 @@ import { hasImagePicker } from "./utils/fileSystem";
 
 const HEADER_SCROLL_THRESHOLD = 80;
 const HEADER_SCROLL_DEBOUNCE_MS = 80;
+const LIGHTBOX_SWITCH_THROTTLE_MS = 30;
 
 const toggleFullscreen = async (): Promise<void> => {
   if (!document.fullscreenElement) {
@@ -43,6 +44,15 @@ export default function App() {
   const [lightboxUrls, setLightboxUrls] = useState<Record<string, string>>({});
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const lightboxThrottleRef = useRef<{
+    lastTriggeredAt: number;
+    pendingIndex: number | null;
+    timerId: ReturnType<typeof window.setTimeout> | null;
+  }>({
+    lastTriggeredAt: 0,
+    pendingIndex: null,
+    timerId: null
+  });
 
   const canPickImages = useMemo(hasImagePicker, []);
   const albums = useMemo(() => buildAlbums(images), [images]);
@@ -150,6 +160,51 @@ export default function App() {
     await refreshCurrentDirectory();
   }, [refreshCurrentDirectory]);
 
+  const resetLightboxThrottle = useCallback(() => {
+    const state = lightboxThrottleRef.current;
+    if (state.timerId !== null) {
+      window.clearTimeout(state.timerId);
+      state.timerId = null;
+    }
+    state.pendingIndex = null;
+    state.lastTriggeredAt = 0;
+  }, []);
+
+  const onLightboxIndexChange = useCallback(
+    (nextIndex: number) => {
+      const state = lightboxThrottleRef.current;
+      const now = Date.now();
+      const elapsed = now - state.lastTriggeredAt;
+      const run = (index: number) => {
+        state.lastTriggeredAt = Date.now();
+        setCurrentIndex(index);
+      };
+
+      if (state.lastTriggeredAt === 0 || elapsed >= LIGHTBOX_SWITCH_THROTTLE_MS) {
+        if (state.timerId !== null) {
+          window.clearTimeout(state.timerId);
+          state.timerId = null;
+        }
+        state.pendingIndex = null;
+        run(nextIndex);
+        return;
+      }
+
+      state.pendingIndex = nextIndex;
+      if (state.timerId !== null) return;
+      state.timerId = window.setTimeout(() => {
+        state.timerId = null;
+        if (state.pendingIndex === null) return;
+        const targetIndex = state.pendingIndex;
+        state.pendingIndex = null;
+        run(targetIndex);
+      }, LIGHTBOX_SWITCH_THROTTLE_MS - elapsed);
+    },
+    []
+  );
+
+  useEffect(() => resetLightboxThrottle, [resetLightboxThrottle]);
+
   useEffect(() => {
     if (!lightboxImages.length) {
       setCurrentIndex(0);
@@ -177,9 +232,10 @@ export default function App() {
 
   useEffect(() => {
     if (lightboxOpen) return;
+    resetLightboxThrottle();
     releaseAllLightboxUrls();
     setLightboxUrls({});
-  }, [lightboxOpen, releaseAllLightboxUrls]);
+  }, [lightboxOpen, releaseAllLightboxUrls, resetLightboxThrottle]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -407,7 +463,7 @@ export default function App() {
         images={lightboxImages}
         lightboxUrls={lightboxUrls}
         onClose={() => setLightboxOpen(false)}
-        onIndexChange={setCurrentIndex}
+        onIndexChange={onLightboxIndexChange}
       />
     </div>
   );
