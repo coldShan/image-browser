@@ -334,7 +334,7 @@ describe("App view modes", () => {
       if (originalScrollY) {
         Object.defineProperty(window, "scrollY", originalScrollY);
       } else {
-        delete (window as Partial<Window>).scrollY;
+        Reflect.deleteProperty(window, "scrollY");
       }
       act(() => {
         vi.runOnlyPendingTimers();

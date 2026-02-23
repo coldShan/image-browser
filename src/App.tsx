@@ -47,7 +47,7 @@ export default function App() {
   const lightboxThrottleRef = useRef<{
     lastTriggeredAt: number;
     pendingIndex: number | null;
-    timerId: ReturnType<typeof window.setTimeout> | null;
+    timerId: number | null;
   }>({
     lastTriggeredAt: 0,
     pendingIndex: null,
@@ -285,7 +285,7 @@ export default function App() {
   ]);
 
   useEffect(() => {
-    let scrolledTimer: ReturnType<typeof window.setTimeout> | null = null;
+    let scrolledTimer: number | null = null;
 
     const applyScrolledState = (y: number) => {
       setIsScrolled(y > HEADER_SCROLL_THRESHOLD);
