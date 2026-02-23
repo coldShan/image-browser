@@ -28,6 +28,26 @@ const images: GalleryImage[] = [
 ];
 
 describe("AlbumDetailModal", () => {
+  it("keeps modal controls available with long album title", async () => {
+    const longAlbumPath =
+      "[YoruNeko] Hisato Azuma In The Office - Himawari wa Yoru ni Saku (Patreon) [AI Generated] ultra-long-title";
+
+    render(
+      <AlbumDetailModal
+        open
+        albumPath={longAlbumPath}
+        images={images}
+        onClose={() => {}}
+        onOpenImage={() => {}}
+        ensurePreviewUrl={async () => null}
+        releasePreviewUrl={() => {}}
+      />
+    );
+
+    expect(await screen.findByRole("heading", { name: longAlbumPath })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "关闭画集详情" })).toBeInTheDocument();
+  });
+
   it("renders title and count when open", async () => {
     render(
       <AlbumDetailModal

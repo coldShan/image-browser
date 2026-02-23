@@ -702,6 +702,7 @@ body::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
   overflow: hidden;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
 }
 
@@ -711,6 +712,7 @@ body::after {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  min-width: 0;
   padding: 18px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   background:
@@ -719,6 +721,7 @@ body::after {
 }
 
 .album-detail-title-wrap {
+  flex: 1 1 auto;
   min-width: 0;
 
   .album-detail-kicker {
@@ -733,13 +736,18 @@ body::after {
 
   h2 {
     margin: 0;
+    display: -webkit-box;
     color: #fffaf0;
     font-family: var(--font-display);
     font-size: clamp(22px, 3.4vw, 38px);
-    line-height: 1.04;
-    white-space: nowrap;
+    line-height: 1.1;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   p {
@@ -751,6 +759,7 @@ body::after {
 }
 
 .album-detail-close {
+  flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.08);
   color: #fff8ea;
@@ -773,11 +782,17 @@ body::after {
 }
 
 .album-detail-body {
+  min-width: 0;
   min-height: 0;
   padding: 16px;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+
+  > .react-photo-album {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .album-detail-empty {
