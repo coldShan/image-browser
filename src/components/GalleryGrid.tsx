@@ -6,9 +6,12 @@ import {
   useRef,
   useState
 } from "react";
+import { Eye } from "lucide-react";
 import {
   RowsPhotoAlbum,
   type Photo,
+  type RenderButtonContext,
+  type RenderButtonProps,
   type RenderImageContext,
   type RenderImageProps
 } from "react-photo-album";
@@ -130,26 +133,49 @@ type GalleryGridProps = {
   onOpen: (index: number) => void;
   ensurePreviewUrl: (id: string) => Promise<string | null>;
   releasePreviewUrl: (id: string) => void;
+  lastViewedRelativePath?: string | null;
+  restoreRelativePath?: string | null;
+  restoreToken?: string | number;
 };
 
-const renderPhotoButton = (props: ComponentProps<"button">) => (
-  <button
-    {...props}
-    className={`${props.className ?? ""} gallery-photo-button`.trim()}
-    aria-label={props["aria-label"] ?? "打开图片"}
-  />
-);
+const renderPhotoButton =
+  (images: GalleryImage[]) =>
+  (props: RenderButtonProps, context: RenderButtonContext<Photo>) => {
+    const image = images[context.index];
+    return (
+      <button
+        {...(props as ComponentProps<"button">)}
+        className={`${props.className ?? ""} gallery-photo-button`.trim()}
+        aria-label={props["aria-label"] ?? "打开图片"}
+        data-gallery-path={image?.relativePath}
+      />
+    );
+  };
 
-const renderPhotoExtras = (images: GalleryImage[]) =>
+const renderPhotoExtras = (
+  images: GalleryImage[],
+  lastViewedRelativePath?: string | null
+) =>
   function renderExtras(_: unknown, context: RenderImageContext) {
     const image = images[context.index];
     if (!image) return null;
+    const isLastViewed = Boolean(
+      lastViewedRelativePath && image.relativePath === lastViewedRelativePath
+    );
 
     return (
-      <div className="gallery-photo-meta" aria-hidden>
-        <strong>{image.name}</strong>
-        <span>{image.relativePath}</span>
-      </div>
+      <>
+        <div className="gallery-photo-meta" aria-hidden>
+          <strong>{image.name}</strong>
+          <span>{image.relativePath}</span>
+        </div>
+        {isLastViewed && (
+          <p className="gallery-last-viewed-badge">
+            <Eye size={13} aria-hidden />
+            上次看到这里
+          </p>
+        )}
+      </>
     );
   };
 
@@ -179,9 +205,14 @@ export default function GalleryGrid({
   images,
   onOpen,
   ensurePreviewUrl,
-  releasePreviewUrl
+  releasePreviewUrl,
+  lastViewedRelativePath,
+  restoreRelativePath,
+  restoreToken
 }: GalleryGridProps) {
   const [scrollSettled, setScrollSettled] = useState(true);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const restoredRef = useRef<string | null>(null);
   const photos = useMemo<Photo[]>(
     () =>
       images.map((image) => ({
@@ -219,10 +250,31 @@ export default function GalleryGrid({
     };
   }, []);
 
+  useEffect(() => {
+    if (!restoreRelativePath || restoreToken === undefined) return;
+    const restoreKey = `${String(restoreToken)}:${restoreRelativePath}`;
+    if (restoredRef.current === restoreKey) return;
+    restoredRef.current = restoreKey;
+
+    const root = rootRef.current;
+    if (!root) return;
+
+    const rafId = window.requestAnimationFrame(() => {
+      const target = Array.from(
+        root.querySelectorAll<HTMLElement>(".gallery-photo-button[data-gallery-path]")
+      ).find((node) => node.dataset.galleryPath === restoreRelativePath);
+      target?.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
+  }, [restoreRelativePath, restoreToken]);
+
   if (!photos.length) return null;
 
   return (
-    <>
+    <div ref={rootRef} className="gallery-grid-shell">
       <p className={`gallery-recover-hint${scrollSettled ? "" : " is-visible"}`} role="status">
         正在快速滚动，停止后会自动加载当前区域图片。
       </p>
@@ -232,8 +284,8 @@ export default function GalleryGrid({
         targetRowHeight={230}
         spacing={16}
         render={{
-          button: renderPhotoButton,
-          extras: renderPhotoExtras(images),
+          button: renderPhotoButton(images),
+          extras: renderPhotoExtras(images, lastViewedRelativePath),
           image: renderPreviewImage(
             scrollSettled,
             ensurePreviewUrl,
@@ -242,6 +294,6 @@ export default function GalleryGrid({
           )
         }}
       />
-    </>
+    </div>
   );
 }

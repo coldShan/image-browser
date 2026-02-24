@@ -4,9 +4,11 @@ import AlbumDetailModal from "./components/AlbumDetailModal";
 import GalleryGrid from "./components/GalleryGrid";
 import ImageLightbox from "./components/ImageLightbox";
 import { useDirectoryImages } from "./hooks/useDirectoryImages";
+import { useReadingHistory } from "./hooks/useReadingHistory";
 import type { GalleryViewMode } from "./types/gallery";
 import { buildAlbums, filterImagesByPath } from "./utils/albums";
 import { hasImagePicker } from "./utils/fileSystem";
+import { makeSourceKey, resolveRestorePath } from "./utils/readingHistory";
 
 const HEADER_SCROLL_THRESHOLD = 80;
 const HEADER_SCROLL_DEBOUNCE_MS = 80;
@@ -44,6 +46,9 @@ export default function App() {
   const [lightboxUrls, setLightboxUrls] = useState<Record<string, string>>({});
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [sourceRestoreToken, setSourceRestoreToken] = useState(0);
+  const [albumDetailRestoreToken, setAlbumDetailRestoreToken] = useState(0);
+  const [albumDetailRestorePath, setAlbumDetailRestorePath] = useState<string | null>(null);
   const lightboxThrottleRef = useRef<{
     lastTriggeredAt: number;
     pendingIndex: number | null;
@@ -56,6 +61,12 @@ export default function App() {
 
   const canPickImages = useMemo(hasImagePicker, []);
   const albums = useMemo(() => buildAlbums(images), [images]);
+  const sourceKey = useMemo(() => makeSourceKey(images), [images]);
+  const { sourceState, recentAlbumPath, albumProgressByPath, recordView } = useReadingHistory({
+    sourceKey,
+    images,
+    albums
+  });
   const allVisibleImages = useMemo(
     () => filterImagesByPath(images, allModePath),
     [allModePath, images]
@@ -68,6 +79,19 @@ export default function App() {
     () => (lightboxScope === "album" ? albumDetailImages : allVisibleImages),
     [albumDetailImages, allVisibleImages, lightboxScope]
   );
+  const allModeRestorePath = useMemo(
+    () =>
+      resolveRestorePath({
+        images: allVisibleImages,
+        relativePath: sourceState.lastViewed?.relativePath,
+        index: sourceState.lastViewed?.index
+      }),
+    [allVisibleImages, sourceState.lastViewed?.index, sourceState.lastViewed?.relativePath]
+  );
+  const activeAlbumLastViewedPath = useMemo(() => {
+    if (!activeAlbumPath) return null;
+    return sourceState.albums[activeAlbumPath]?.relativePath ?? null;
+  }, [activeAlbumPath, sourceState.albums]);
   const isAlbumListView = viewMode === "album";
 
   const resetBrowseContext = useCallback(() => {
@@ -77,6 +101,7 @@ export default function App() {
     setLightboxScope("all");
     setCurrentIndex(0);
     setLightboxOpen(false);
+    setAlbumDetailRestorePath(null);
   }, []);
 
   const resetViewState = useCallback(() => {
@@ -114,6 +139,7 @@ export default function App() {
     setLightboxOpen(false);
     setLightboxScope("all");
     setCurrentIndex(0);
+    setAlbumDetailRestorePath(null);
   }, []);
 
   const onAlbumModalClose = useCallback(() => {
@@ -137,14 +163,32 @@ export default function App() {
     setActiveAlbumPath(null);
   }, [closeAlbumDetail]);
 
-  const openAlbum = useCallback((path: string) => {
-    setViewMode("album");
-    setActiveAlbumPath(path);
-    setAlbumDetailOpen(true);
-    setCurrentIndex(0);
-    setLightboxOpen(false);
-    setLightboxScope("album");
-  }, []);
+  const openAlbum = useCallback(
+    (path: string) => {
+      const albumImagesForPath = filterImagesByPath(images, path);
+      const pointer = sourceState.albums[path];
+      const restorePath = pointer
+        ? resolveRestorePath({
+            images: albumImagesForPath,
+            relativePath: pointer.relativePath,
+            index: pointer.index
+          })
+        : null;
+      const restoreIndex = restorePath
+        ? albumImagesForPath.findIndex((image) => image.relativePath === restorePath)
+        : -1;
+
+      setViewMode("album");
+      setActiveAlbumPath(path);
+      setAlbumDetailOpen(true);
+      setCurrentIndex(restoreIndex >= 0 ? restoreIndex : 0);
+      setLightboxOpen(false);
+      setLightboxScope("album");
+      setAlbumDetailRestorePath(restorePath);
+      setAlbumDetailRestoreToken((value) => value + 1);
+    },
+    [images, sourceState.albums]
+  );
 
   const onPickDirectory = useCallback(async () => {
     await pickDirectory();
@@ -154,6 +198,7 @@ export default function App() {
   const onClearImages = useCallback(() => {
     clearImages();
     resetViewState();
+    setSourceRestoreToken(0);
   }, [clearImages, resetViewState]);
 
   const onRefreshCurrentDirectory = useCallback(async () => {
@@ -206,6 +251,11 @@ export default function App() {
   useEffect(() => resetLightboxThrottle, [resetLightboxThrottle]);
 
   useEffect(() => {
+    if (!images.length) return;
+    setSourceRestoreToken((value) => value + 1);
+  }, [images]);
+
+  useEffect(() => {
     if (!lightboxImages.length) {
       setCurrentIndex(0);
       setLightboxOpen(false);
@@ -229,6 +279,13 @@ export default function App() {
       cancelled = true;
     };
   }, [currentIndex, lightboxImages, lightboxOpen, syncLightboxWindow]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const target = lightboxImages[currentIndex];
+    if (!target) return;
+    recordView({ image: target, index: currentIndex });
+  }, [currentIndex, lightboxImages, lightboxOpen, recordView]);
 
   useEffect(() => {
     if (lightboxOpen) return;
@@ -417,6 +474,10 @@ export default function App() {
               onOpenAlbum={openAlbum}
               ensurePreviewUrl={ensurePreviewUrl}
               releasePreviewUrl={releasePreviewUrl}
+              progressByAlbumPath={albumProgressByPath}
+              recentAlbumPath={recentAlbumPath}
+              restoreAlbumPath={recentAlbumPath}
+              restoreToken={sourceRestoreToken}
             />
           ) : (
             <section className="empty-state album-empty">
@@ -437,6 +498,9 @@ export default function App() {
               onOpen={openAllAt}
               ensurePreviewUrl={ensurePreviewUrl}
               releasePreviewUrl={releasePreviewUrl}
+              lastViewedRelativePath={sourceState.lastViewed?.relativePath}
+              restoreRelativePath={allModeRestorePath}
+              restoreToken={sourceRestoreToken}
             />
           ) : (
             <section className="empty-state album-empty">
@@ -455,6 +519,9 @@ export default function App() {
         onOpenImage={openAlbumAt}
         ensurePreviewUrl={ensurePreviewUrl}
         releasePreviewUrl={releasePreviewUrl}
+        lastViewedRelativePath={activeAlbumLastViewedPath}
+        restoreRelativePath={albumDetailRestorePath}
+        restoreToken={albumDetailRestoreToken}
       />
 
       <ImageLightbox

@@ -11,6 +11,9 @@ type AlbumDetailModalProps = {
   onOpenImage: (index: number) => void;
   ensurePreviewUrl: (id: string) => Promise<string | null>;
   releasePreviewUrl: (id: string) => void;
+  lastViewedRelativePath?: string | null;
+  restoreRelativePath?: string | null;
+  restoreToken?: string | number;
 };
 
 export default function AlbumDetailModal({
@@ -20,7 +23,10 @@ export default function AlbumDetailModal({
   onClose,
   onOpenImage,
   ensurePreviewUrl,
-  releasePreviewUrl
+  releasePreviewUrl,
+  lastViewedRelativePath,
+  restoreRelativePath,
+  restoreToken
 }: AlbumDetailModalProps) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
@@ -100,6 +106,9 @@ export default function AlbumDetailModal({
                       onOpen={onOpenImage}
                       ensurePreviewUrl={ensurePreviewUrl}
                       releasePreviewUrl={releasePreviewUrl}
+                      lastViewedRelativePath={lastViewedRelativePath}
+                      restoreRelativePath={restoreRelativePath}
+                      restoreToken={restoreToken}
                     />
                   ) : (
                     <section className="album-detail-empty">

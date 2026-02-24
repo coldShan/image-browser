@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GalleryImage } from "../types/gallery";
 import App from "../App";
 import { useDirectoryImages } from "../hooks/useDirectoryImages";
+import { useReadingHistory } from "../hooks/useReadingHistory";
 
 const images: GalleryImage[] = [
   {
@@ -60,6 +61,9 @@ vi.mock("../utils/fileSystem", () => ({
 vi.mock("../hooks/useDirectoryImages", () => ({
   useDirectoryImages: vi.fn()
 }));
+vi.mock("../hooks/useReadingHistory", () => ({
+  useReadingHistory: vi.fn()
+}));
 
 const hookResult = {
   images,
@@ -74,6 +78,30 @@ const hookResult = {
   syncLightboxWindow: vi.fn(async () => ({})),
   releaseAllLightboxUrls: vi.fn(() => {})
 };
+const readingHistoryResult = {
+  sourceState: {
+    lastViewed: {
+      relativePath: "album-a/a-1.jpg",
+      index: 0,
+      viewedAt: 1
+    },
+    albums: {
+      "album-a": {
+        relativePath: "album-a/sub/a-2.jpg",
+        index: 1,
+        viewedAt: 2
+      }
+    },
+    recentAlbumPath: "album-a",
+    updatedAt: 2
+  },
+  recentAlbumPath: "album-a",
+  albumProgressByPath: {
+    "album-a": 0.5,
+    "album-b": 0
+  },
+  recordView: vi.fn(() => {})
+};
 
 type LightboxMockProps = {
   open: boolean;
@@ -82,50 +110,63 @@ type LightboxMockProps = {
 };
 
 let latestLightboxProps: LightboxMockProps | null = null;
+let latestGalleryProps: Record<string, unknown> | null = null;
+let latestAlbumGridProps: Record<string, unknown> | null = null;
+let latestAlbumDetailProps: Record<string, unknown> | null = null;
 
 vi.mock("../components/GalleryGrid", () => ({
   default: ({
     images: current,
-    onOpen
+    onOpen,
+    ...rest
   }: {
     images: GalleryImage[];
     onOpen: (index: number) => void;
-  }) => (
-    <div data-testid="gallery-grid">
-      <button type="button" onClick={() => onOpen(0)}>
-        打开第1张
-      </button>
-      <p>{`当前列表 ${current.length} 张`}</p>
-      <ul>
-        {current.map((item) => (
-          <li key={item.id}>{item.relativePath}</li>
-        ))}
-      </ul>
-    </div>
-  )
+    [key: string]: unknown;
+  }) => {
+    latestGalleryProps = { images: current, onOpen, ...rest };
+    return (
+      <div data-testid="gallery-grid">
+        <button type="button" onClick={() => onOpen(0)}>
+          打开第1张
+        </button>
+        <p>{`当前列表 ${current.length} 张`}</p>
+        <ul>
+          {current.map((item) => (
+            <li key={item.id}>{item.relativePath}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
 }));
 
 vi.mock("../components/AlbumGrid", () => ({
   default: ({
     albums,
-    onOpenAlbum
+    onOpenAlbum,
+    ...rest
   }: {
     albums: Array<{ path: string; title: string; imageCount: number }>;
     onOpenAlbum: (path: string) => void;
-  }) => (
-    <div data-testid="album-grid">
-      {albums.map((item) => (
-        <button
-          key={item.path}
-          type="button"
-          onClick={() => onOpenAlbum(item.path)}
-          aria-label={`打开画集 ${item.title}`}
-        >
-          {`${item.title}(${item.imageCount})`}
-        </button>
-      ))}
-    </div>
-  )
+    [key: string]: unknown;
+  }) => {
+    latestAlbumGridProps = { albums, onOpenAlbum, ...rest };
+    return (
+      <div data-testid="album-grid">
+        {albums.map((item) => (
+          <button
+            key={item.path}
+            type="button"
+            onClick={() => onOpenAlbum(item.path)}
+            aria-label={`打开画集 ${item.title}`}
+          >
+            {`${item.title}(${item.imageCount})`}
+          </button>
+        ))}
+      </div>
+    );
+  }
 }));
 
 vi.mock("../components/ImageLightbox", () => ({
@@ -140,14 +181,17 @@ vi.mock("../components/AlbumDetailModal", () => ({
     open,
     albumPath,
     onClose,
-    onOpenImage
+    onOpenImage,
+    ...rest
   }: {
     open: boolean;
     albumPath: string | null;
     onClose: () => void;
     onOpenImage: (index: number) => void;
-  }) =>
-    open ? (
+    [key: string]: unknown;
+  }) => {
+    latestAlbumDetailProps = { open, albumPath, onClose, onOpenImage, ...rest };
+    return open ? (
       <div role="dialog" aria-label={`画集详情-${albumPath}`}>
         <button type="button" onClick={() => onOpenImage(0)}>
           弹窗打开第1张
@@ -156,14 +200,19 @@ vi.mock("../components/AlbumDetailModal", () => ({
           触发弹窗关闭事件
         </button>
       </div>
-    ) : null
+    ) : null;
+  }
 }));
 
 describe("App view modes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     latestLightboxProps = null;
+    latestGalleryProps = null;
+    latestAlbumGridProps = null;
+    latestAlbumDetailProps = null;
     vi.mocked(useDirectoryImages).mockReturnValue(hookResult);
+    vi.mocked(useReadingHistory).mockReturnValue(readingHistoryResult);
   });
 
   it("defaults to all mode and can switch to album mode", async () => {
@@ -183,6 +232,37 @@ describe("App view modes", () => {
       "true"
     );
     expect(screen.getByTestId("album-grid")).toBeInTheDocument();
+  });
+
+  it("passes reading history props to list components", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(latestGalleryProps?.lastViewedRelativePath).toBe("album-a/a-1.jpg");
+    expect(latestGalleryProps?.restoreRelativePath).toBe("album-a/a-1.jpg");
+    expect(latestGalleryProps?.restoreToken).toEqual(expect.any(Number));
+
+    await user.click(screen.getByRole("tab", { name: "画集模式" }));
+    expect(latestAlbumGridProps?.recentAlbumPath).toBe("album-a");
+    expect(latestAlbumGridProps?.restoreAlbumPath).toBe("album-a");
+    expect(latestAlbumGridProps?.restoreToken).toEqual(expect.any(Number));
+    expect(
+      (latestAlbumGridProps?.progressByAlbumPath as Record<string, number>)["album-a"]
+    ).toBe(0.5);
+  });
+
+  it("records current image when lightbox opens", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "打开第1张" }));
+    await act(async () => {});
+
+    expect(readingHistoryResult.recordView).toHaveBeenCalledWith(
+      expect.objectContaining({
+        index: 0,
+        image: expect.objectContaining({ relativePath: "root-1.jpg" })
+      })
+    );
   });
 
   it("keeps current album path when switching from album detail to all mode", async () => {
@@ -250,6 +330,18 @@ describe("App view modes", () => {
       "true"
     );
     expect(screen.getByTestId("album-grid")).toBeInTheDocument();
+  });
+
+  it("restores album detail focus image from reading history", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: "画集模式" }));
+    await user.click(screen.getByRole("button", { name: "打开画集 album-a" }));
+
+    expect(latestAlbumDetailProps?.restoreRelativePath).toBe("album-a/sub/a-2.jpg");
+    await user.keyboard("{Enter}");
+    expect(latestLightboxProps?.index).toBe(1);
   });
 
   it("does not manually lock body scrolling when album detail opens", async () => {
