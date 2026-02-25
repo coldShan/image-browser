@@ -13,6 +13,7 @@ import { makeSourceKey, resolveRestorePath } from "./utils/readingHistory";
 const HEADER_SCROLL_THRESHOLD = 80;
 const HEADER_SCROLL_DEBOUNCE_MS = 80;
 const LIGHTBOX_SWITCH_THROTTLE_MS = 30;
+const DEFAULT_VIEW_MODE: GalleryViewMode = "album";
 
 const toggleFullscreen = async (): Promise<void> => {
   if (!document.fullscreenElement) {
@@ -36,7 +37,7 @@ export default function App() {
     syncLightboxWindow,
     releaseAllLightboxUrls
   } = useDirectoryImages();
-  const [viewMode, setViewMode] = useState<GalleryViewMode>("all");
+  const [viewMode, setViewMode] = useState<GalleryViewMode>(DEFAULT_VIEW_MODE);
   const [activeAlbumPath, setActiveAlbumPath] = useState<string | null>(null);
   const [albumDetailOpen, setAlbumDetailOpen] = useState(false);
   const [allModePath, setAllModePath] = useState("");
@@ -83,15 +84,19 @@ export default function App() {
     () =>
       resolveRestorePath({
         images: allVisibleImages,
-        relativePath: sourceState.lastViewed?.relativePath,
-        index: sourceState.lastViewed?.index
+        relativePath: sourceState.allMode.lastViewed?.relativePath,
+        index: sourceState.allMode.lastViewed?.index
       }),
-    [allVisibleImages, sourceState.lastViewed?.index, sourceState.lastViewed?.relativePath]
+    [
+      allVisibleImages,
+      sourceState.allMode.lastViewed?.index,
+      sourceState.allMode.lastViewed?.relativePath
+    ]
   );
   const activeAlbumLastViewedPath = useMemo(() => {
     if (!activeAlbumPath) return null;
-    return sourceState.albums[activeAlbumPath]?.relativePath ?? null;
-  }, [activeAlbumPath, sourceState.albums]);
+    return sourceState.albumMode.albums[activeAlbumPath]?.relativePath ?? null;
+  }, [activeAlbumPath, sourceState.albumMode.albums]);
   const isAlbumListView = viewMode === "album";
 
   const resetBrowseContext = useCallback(() => {
@@ -105,7 +110,7 @@ export default function App() {
   }, []);
 
   const resetViewState = useCallback(() => {
-    setViewMode("all");
+    setViewMode(DEFAULT_VIEW_MODE);
     resetBrowseContext();
   }, [resetBrowseContext]);
 
@@ -166,7 +171,7 @@ export default function App() {
   const openAlbum = useCallback(
     (path: string) => {
       const albumImagesForPath = filterImagesByPath(images, path);
-      const pointer = sourceState.albums[path];
+      const pointer = sourceState.albumMode.albums[path];
       const restorePath = pointer
         ? resolveRestorePath({
             images: albumImagesForPath,
@@ -187,7 +192,7 @@ export default function App() {
       setAlbumDetailRestorePath(restorePath);
       setAlbumDetailRestoreToken((value) => value + 1);
     },
-    [images, sourceState.albums]
+    [images, sourceState.albumMode.albums]
   );
 
   const onPickDirectory = useCallback(async () => {
@@ -284,8 +289,8 @@ export default function App() {
     if (!lightboxOpen) return;
     const target = lightboxImages[currentIndex];
     if (!target) return;
-    recordView({ image: target, index: currentIndex });
-  }, [currentIndex, lightboxImages, lightboxOpen, recordView]);
+    recordView({ image: target, index: currentIndex, scope: lightboxScope });
+  }, [currentIndex, lightboxImages, lightboxOpen, lightboxScope, recordView]);
 
   useEffect(() => {
     if (lightboxOpen) return;
@@ -498,7 +503,7 @@ export default function App() {
               onOpen={openAllAt}
               ensurePreviewUrl={ensurePreviewUrl}
               releasePreviewUrl={releasePreviewUrl}
-              lastViewedRelativePath={sourceState.lastViewed?.relativePath}
+              lastViewedRelativePath={sourceState.allMode.lastViewed?.relativePath}
               restoreRelativePath={allModeRestorePath}
               restoreToken={sourceRestoreToken}
             />

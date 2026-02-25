@@ -7,7 +7,8 @@ import {
   recordViewedImage,
   resolveRestorePath,
   saveReadingStore,
-  type SourceReadingState
+  type SourceReadingState,
+  type ViewScope
 } from "../utils/readingHistory";
 
 const DEFAULT_SAVE_DEBOUNCE_MS = 250;
@@ -15,6 +16,7 @@ const DEFAULT_SAVE_DEBOUNCE_MS = 250;
 type RecordViewInput = {
   image: GalleryImage;
   index: number;
+  scope: ViewScope;
 };
 
 type UseReadingHistoryInput = {
@@ -65,13 +67,14 @@ export const useReadingHistory = ({
   useEffect(() => flush, [flush]);
 
   const recordView = useCallback(
-    ({ image, index }: RecordViewInput) => {
+    ({ image, index, scope }: RecordViewInput) => {
       setStore((current) => {
         const next = recordViewedImage({
           store: current,
           sourceKey,
           image,
-          index
+          index,
+          scope
         });
         if (next === current) return current;
         scheduleSave(next);
@@ -82,12 +85,12 @@ export const useReadingHistory = ({
   );
 
   const sourceState = useMemo(() => getSourceState(store, sourceKey), [sourceKey, store]);
-  const recentAlbumPath = sourceState.recentAlbumPath;
+  const recentAlbumPath = sourceState.albumMode.recentAlbumPath;
 
   const albumProgressByPath = useMemo(
     () =>
       albums.reduce<Record<string, number>>((current, album) => {
-        const pointer = sourceState.albums[album.path];
+        const pointer = sourceState.albumMode.albums[album.path];
         if (!pointer || album.imageCount <= 0) {
           current[album.path] = 0;
           return current;
@@ -113,7 +116,7 @@ export const useReadingHistory = ({
             : 0;
         return current;
       }, {}),
-    [albums, images, sourceState.albums]
+    [albums, images, sourceState.albumMode.albums]
   );
 
   return {
