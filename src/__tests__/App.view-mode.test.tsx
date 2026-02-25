@@ -80,19 +80,23 @@ const hookResult = {
 };
 const readingHistoryResult = {
   sourceState: {
-    lastViewed: {
-      relativePath: "album-a/a-1.jpg",
-      index: 0,
-      viewedAt: 1
-    },
-    albums: {
-      "album-a": {
-        relativePath: "album-a/sub/a-2.jpg",
-        index: 1,
-        viewedAt: 2
+    allMode: {
+      lastViewed: {
+        relativePath: "album-a/a-1.jpg",
+        index: 0,
+        viewedAt: 1
       }
     },
-    recentAlbumPath: "album-a",
+    albumMode: {
+      albums: {
+        "album-a": {
+          relativePath: "album-a/sub/a-2.jpg",
+          index: 1,
+          viewedAt: 2
+        }
+      },
+      recentAlbumPath: "album-a"
+    },
     updatedAt: 2
   },
   recentAlbumPath: "album-a",
@@ -215,50 +219,53 @@ describe("App view modes", () => {
     vi.mocked(useReadingHistory).mockReturnValue(readingHistoryResult);
   });
 
-  it("defaults to all mode and can switch to album mode", async () => {
+  it("defaults to album mode and can switch to all mode", async () => {
     const user = userEvent.setup();
     render(<App />);
 
+    expect(screen.getByRole("tab", { name: "画集模式" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(screen.getByTestId("album-grid")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "全图模式" }));
     expect(screen.getByRole("tab", { name: "全图模式" })).toHaveAttribute(
       "aria-pressed",
       "true"
     );
     expect(screen.getByTestId("gallery-grid")).toBeInTheDocument();
     expect(screen.getByText("当前列表 5 张")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("tab", { name: "画集模式" }));
-    expect(screen.getByRole("tab", { name: "画集模式" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
-    expect(screen.getByTestId("album-grid")).toBeInTheDocument();
   });
 
   it("passes reading history props to list components", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(latestGalleryProps?.lastViewedRelativePath).toBe("album-a/a-1.jpg");
-    expect(latestGalleryProps?.restoreRelativePath).toBe("album-a/a-1.jpg");
-    expect(latestGalleryProps?.restoreToken).toEqual(expect.any(Number));
-
-    await user.click(screen.getByRole("tab", { name: "画集模式" }));
     expect(latestAlbumGridProps?.recentAlbumPath).toBe("album-a");
     expect(latestAlbumGridProps?.restoreAlbumPath).toBe("album-a");
     expect(latestAlbumGridProps?.restoreToken).toEqual(expect.any(Number));
     expect(
       (latestAlbumGridProps?.progressByAlbumPath as Record<string, number>)["album-a"]
     ).toBe(0.5);
+
+    await user.click(screen.getByRole("tab", { name: "全图模式" }));
+    expect(latestGalleryProps?.lastViewedRelativePath).toBe("album-a/a-1.jpg");
+    expect(latestGalleryProps?.restoreRelativePath).toBe("album-a/a-1.jpg");
+    expect(latestGalleryProps?.restoreToken).toEqual(expect.any(Number));
   });
 
   it("records current image when lightbox opens", async () => {
+    const user = userEvent.setup();
     render(<App />);
 
+    await user.click(screen.getByRole("tab", { name: "全图模式" }));
     fireEvent.click(screen.getByRole("button", { name: "打开第1张" }));
     await act(async () => {});
 
     expect(readingHistoryResult.recordView).toHaveBeenCalledWith(
       expect.objectContaining({
+        scope: "all",
         index: 0,
         image: expect.objectContaining({ relativePath: "root-1.jpg" })
       })
@@ -439,6 +446,7 @@ describe("App view modes", () => {
     vi.useFakeTimers();
     try {
       render(<App />);
+      fireEvent.click(screen.getByRole("tab", { name: "全图模式" }));
 
       fireEvent.click(screen.getByRole("button", { name: "打开第1张" }));
       expect(screen.getByTestId("lightbox-open")).toBeInTheDocument();

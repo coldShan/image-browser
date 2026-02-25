@@ -12,11 +12,20 @@ export type LastViewedPointer = {
 };
 
 export type AlbumReadingState = LastViewedPointer;
+export type ViewScope = "all" | "album";
 
-export type SourceReadingState = {
+export type AllModeReadingState = {
   lastViewed: LastViewedPointer | null;
+};
+
+export type AlbumModeReadingState = {
   albums: Record<string, AlbumReadingState>;
   recentAlbumPath: string | null;
+};
+
+export type SourceReadingState = {
+  allMode: AllModeReadingState;
+  albumMode: AlbumModeReadingState;
   updatedAt: number;
 };
 
@@ -29,6 +38,7 @@ type RecordViewedImageInput = {
   sourceKey: string;
   image: Pick<GalleryImage, "relativePath">;
   index: number;
+  scope: ViewScope;
   viewedAt?: number;
 };
 
@@ -57,7 +67,10 @@ const toPointer = (value: unknown): LastViewedPointer | null => {
 
 const normalizeSourceState = (value: unknown): SourceReadingState | null => {
   if (!isRecord(value)) return null;
-  const albumsRaw = isRecord(value.albums) ? value.albums : {};
+  const legacyAlbumsRaw = isRecord(value.albums) ? value.albums : {};
+  const albumModeRaw = isRecord(value.albumMode) ? value.albumMode : null;
+  const allModeRaw = isRecord(value.allMode) ? value.allMode : null;
+  const albumsRaw = isRecord(albumModeRaw?.albums) ? albumModeRaw.albums : legacyAlbumsRaw;
   const albums: Record<string, AlbumReadingState> = {};
 
   for (const [path, pointer] of Object.entries(albumsRaw)) {
@@ -66,23 +79,35 @@ const normalizeSourceState = (value: unknown): SourceReadingState | null => {
     albums[path] = parsed;
   }
 
-  const lastViewed = toPointer(value.lastViewed);
+  const lastViewed = toPointer(allModeRaw?.lastViewed ?? value.lastViewed);
   const recentAlbumPath =
-    typeof value.recentAlbumPath === "string" ? value.recentAlbumPath : null;
+    typeof albumModeRaw?.recentAlbumPath === "string"
+      ? albumModeRaw.recentAlbumPath
+      : typeof value.recentAlbumPath === "string"
+        ? value.recentAlbumPath
+        : null;
   const updatedAt = typeof value.updatedAt === "number" ? value.updatedAt : 0;
 
   return {
-    lastViewed,
-    albums,
-    recentAlbumPath,
+    allMode: {
+      lastViewed
+    },
+    albumMode: {
+      albums,
+      recentAlbumPath
+    },
     updatedAt
   };
 };
 
 const getEmptySourceState = (): SourceReadingState => ({
-  lastViewed: null,
-  albums: {},
-  recentAlbumPath: null,
+  allMode: {
+    lastViewed: null
+  },
+  albumMode: {
+    albums: {},
+    recentAlbumPath: null
+  },
   updatedAt: 0
 });
 
@@ -168,6 +193,7 @@ export const recordViewedImage = ({
   sourceKey,
   image,
   index,
+  scope,
   viewedAt = Date.now()
 }: RecordViewedImageInput): ReadingStore => {
   if (!sourceKey) return store;
@@ -178,26 +204,45 @@ export const recordViewedImage = ({
     index,
     viewedAt
   };
-  const nextAlbums = { ...current.albums };
+  const nextAllMode: AllModeReadingState = { ...current.allMode };
+  const nextAlbumMode: AlbumModeReadingState = {
+    albums: { ...current.albumMode.albums },
+    recentAlbumPath: current.albumMode.recentAlbumPath
+  };
+  let changed = false;
 
-  if (albumPath) {
-    nextAlbums[albumPath] = nextLastViewed;
+  if (scope === "all") {
+    const previous = current.allMode.lastViewed;
+    if (
+      previous?.relativePath === nextLastViewed.relativePath &&
+      previous.index === nextLastViewed.index
+    ) {
+      return store;
+    }
+    nextAllMode.lastViewed = nextLastViewed;
+    changed = true;
   }
 
-  if (
-    current.lastViewed?.relativePath === nextLastViewed.relativePath &&
-    current.lastViewed.index === nextLastViewed.index &&
-    (!albumPath ||
-      (current.albums[albumPath]?.relativePath === nextLastViewed.relativePath &&
-        current.albums[albumPath]?.index === nextLastViewed.index))
-  ) {
+  if (scope === "album" && albumPath) {
+    const previousAlbum = current.albumMode.albums[albumPath];
+    if (
+      previousAlbum?.relativePath === nextLastViewed.relativePath &&
+      previousAlbum.index === nextLastViewed.index
+    ) {
+      return store;
+    }
+    nextAlbumMode.albums[albumPath] = nextLastViewed;
+    nextAlbumMode.recentAlbumPath = albumPath;
+    changed = true;
+  }
+
+  if (!changed) {
     return store;
   }
 
   const nextSource: SourceReadingState = {
-    lastViewed: nextLastViewed,
-    albums: nextAlbums,
-    recentAlbumPath: albumPath ?? current.recentAlbumPath,
+    allMode: nextAllMode,
+    albumMode: nextAlbumMode,
     updatedAt: viewedAt
   };
 

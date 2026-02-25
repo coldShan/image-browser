@@ -42,21 +42,29 @@ describe("readingHistory", () => {
       makeImage("3", "root.jpg")
     ];
     const sourceKey = makeSourceKey(images);
-    const next = recordViewedImage({
+    const storedFromAllMode = recordViewedImage({
       store: loadReadingStore(),
       sourceKey,
       image: images[1],
-      index: 1
+      index: 1,
+      scope: "all"
+    });
+    const next = recordViewedImage({
+      store: storedFromAllMode,
+      sourceKey,
+      image: images[0],
+      index: 0,
+      scope: "album"
     });
 
     saveReadingStore(next);
     const loaded = loadReadingStore();
     const state = getSourceState(loaded, sourceKey);
 
-    expect(state.lastViewed?.relativePath).toBe("album-a/2.jpg");
-    expect(state.lastViewed?.index).toBe(1);
-    expect(state.recentAlbumPath).toBe("album-a");
-    expect(state.albums["album-a"]?.relativePath).toBe("album-a/2.jpg");
+    expect(state.allMode.lastViewed?.relativePath).toBe("album-a/2.jpg");
+    expect(state.allMode.lastViewed?.index).toBe(1);
+    expect(state.albumMode.recentAlbumPath).toBe("album-a");
+    expect(state.albumMode.albums["album-a"]?.relativePath).toBe("album-a/1.jpg");
   });
 
   it("keeps only latest 30 source entries", () => {
@@ -69,6 +77,7 @@ describe("readingHistory", () => {
         sourceKey: `source-${index}`,
         image,
         index: 0,
+        scope: "all",
         viewedAt: index + 1
       });
     }
@@ -108,5 +117,32 @@ describe("readingHistory", () => {
         index: 10
       })
     ).toBeNull();
+  });
+
+  it("does not sync progress between all and album scopes", () => {
+    const sourceKey = "source-a";
+    const image = makeImage("1", "album-a/1.jpg");
+    let store = loadReadingStore();
+
+    store = recordViewedImage({
+      store,
+      sourceKey,
+      image,
+      index: 0,
+      scope: "all"
+    });
+    let state = getSourceState(store, sourceKey);
+    expect(state.albumMode.albums["album-a"]).toBeUndefined();
+
+    store = recordViewedImage({
+      store,
+      sourceKey,
+      image: makeImage("2", "album-a/2.jpg"),
+      index: 1,
+      scope: "album"
+    });
+    state = getSourceState(store, sourceKey);
+    expect(state.allMode.lastViewed?.relativePath).toBe("album-a/1.jpg");
+    expect(state.albumMode.albums["album-a"]?.relativePath).toBe("album-a/2.jpg");
   });
 });
