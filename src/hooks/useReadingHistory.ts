@@ -17,6 +17,7 @@ type RecordViewInput = {
   image: GalleryImage;
   index: number;
   scope: ViewScope;
+  albumPath?: string | null;
 };
 
 type UseReadingHistoryInput = {
@@ -67,14 +68,15 @@ export const useReadingHistory = ({
   useEffect(() => flush, [flush]);
 
   const recordView = useCallback(
-    ({ image, index, scope }: RecordViewInput) => {
+    ({ image, index, scope, albumPath }: RecordViewInput) => {
       setStore((current) => {
         const next = recordViewedImage({
           store: current,
           sourceKey,
           image,
           index,
-          scope
+          scope,
+          albumPath
         });
         if (next === current) return current;
         scheduleSave(next);

@@ -1,5 +1,8 @@
 import type { AlbumSummary, GalleryImage } from "../types/gallery";
 
+export const ROOT_ALBUM_PATH = "__root__";
+export const ROOT_ALBUM_TITLE = "当前目录";
+
 const byPathAsc = (a: { relativePath: string }, b: { relativePath: string }): number =>
   a.relativePath.localeCompare(b.relativePath, undefined, {
     numeric: true,
@@ -7,6 +10,7 @@ const byPathAsc = (a: { relativePath: string }, b: { relativePath: string }): nu
   });
 
 const normalizePath = (path: string): string => path.replace(/^\/+|\/+$/g, "");
+const isRootImage = (relativePath: string): boolean => !relativePath.includes("/");
 
 export const isUnderPath = (relativePath: string, path: string): boolean => {
   const normalized = normalizePath(path);
@@ -15,17 +19,22 @@ export const isUnderPath = (relativePath: string, path: string): boolean => {
 };
 
 export const filterImagesByPath = (images: GalleryImage[], path: string): GalleryImage[] => {
+  if (!path) return images;
+  if (path === ROOT_ALBUM_PATH) return images.filter((item) => isRootImage(item.relativePath));
   const normalized = normalizePath(path);
-  if (!normalized) return images;
   return images.filter((item) => isUnderPath(item.relativePath, normalized));
 };
 
 export const buildAlbums = (images: GalleryImage[]): AlbumSummary[] => {
   const map = new Map<string, GalleryImage[]>();
+  const rootImages: GalleryImage[] = [];
 
   for (const image of images) {
     const slashIndex = image.relativePath.indexOf("/");
-    if (slashIndex <= 0) continue;
+    if (slashIndex <= 0) {
+      rootImages.push(image);
+      continue;
+    }
     const topLevel = image.relativePath.slice(0, slashIndex);
     const list = map.get(topLevel);
     if (list) {
@@ -35,7 +44,7 @@ export const buildAlbums = (images: GalleryImage[]): AlbumSummary[] => {
     map.set(topLevel, [image]);
   }
 
-  return Array.from(map.entries())
+  const albums = Array.from(map.entries())
     .sort(([a], [b]) =>
       a.localeCompare(b, undefined, {
         numeric: true,
@@ -52,4 +61,17 @@ export const buildAlbums = (images: GalleryImage[]): AlbumSummary[] => {
         imageCount: list.length
       };
     });
+
+  if (rootImages.length) {
+    const [cover] = [...rootImages].sort(byPathAsc);
+    albums.unshift({
+      path: ROOT_ALBUM_PATH,
+      title: ROOT_ALBUM_TITLE,
+      coverImageId: cover.id,
+      coverRelativePath: cover.relativePath,
+      imageCount: rootImages.length
+    });
+  }
+
+  return albums;
 };

@@ -5,6 +5,7 @@ import type { GalleryImage } from "../types/gallery";
 import App from "../App";
 import { useDirectoryImages } from "../hooks/useDirectoryImages";
 import { useReadingHistory } from "../hooks/useReadingHistory";
+import { ROOT_ALBUM_PATH, ROOT_ALBUM_TITLE } from "../utils/albums";
 
 const images: GalleryImage[] = [
   {
@@ -228,6 +229,11 @@ describe("App view modes", () => {
       "true"
     );
     expect(screen.getByTestId("album-grid")).toBeInTheDocument();
+    expect(
+      (latestAlbumGridProps?.albums as Array<{ path: string; title: string; imageCount: number }>).map(
+        (item) => [item.path, item.title, item.imageCount]
+      )
+    ).toContainEqual([ROOT_ALBUM_PATH, ROOT_ALBUM_TITLE, 2]);
 
     await user.click(screen.getByRole("tab", { name: "全图模式" }));
     expect(screen.getByRole("tab", { name: "全图模式" })).toHaveAttribute(

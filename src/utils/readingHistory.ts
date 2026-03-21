@@ -1,4 +1,5 @@
 import type { GalleryImage } from "../types/gallery";
+import { ROOT_ALBUM_PATH } from "./albums";
 
 export const READING_HISTORY_STORAGE_KEY = "image-browser:reading-history:v1";
 const MAX_SOURCE_ENTRIES = 30;
@@ -39,6 +40,7 @@ type RecordViewedImageInput = {
   image: Pick<GalleryImage, "relativePath">;
   index: number;
   scope: ViewScope;
+  albumPath?: string | null;
   viewedAt?: number;
 };
 
@@ -122,7 +124,7 @@ const hash = (input: string): string => {
 
 const toAlbumPath = (relativePath: string): string | null => {
   const separatorIndex = relativePath.indexOf("/");
-  if (separatorIndex <= 0) return null;
+  if (separatorIndex <= 0) return ROOT_ALBUM_PATH;
   return relativePath.slice(0, separatorIndex);
 };
 
@@ -194,11 +196,12 @@ export const recordViewedImage = ({
   image,
   index,
   scope,
+  albumPath: albumPathOverride,
   viewedAt = Date.now()
 }: RecordViewedImageInput): ReadingStore => {
   if (!sourceKey) return store;
   const current = getSourceState(store, sourceKey);
-  const albumPath = toAlbumPath(image.relativePath);
+  const albumPath = albumPathOverride ?? toAlbumPath(image.relativePath);
   const nextLastViewed: LastViewedPointer = {
     relativePath: image.relativePath,
     index,
