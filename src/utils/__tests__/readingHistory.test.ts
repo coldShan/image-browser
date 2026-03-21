@@ -9,6 +9,7 @@ import {
   saveReadingStore,
   type ReadingStore
 } from "../readingHistory";
+import { ROOT_ALBUM_PATH } from "../albums";
 
 const makeImage = (id: string, relativePath: string): GalleryImage => ({
   id,
@@ -144,5 +145,22 @@ describe("readingHistory", () => {
     state = getSourceState(store, sourceKey);
     expect(state.allMode.lastViewed?.relativePath).toBe("album-a/1.jpg");
     expect(state.albumMode.albums["album-a"]?.relativePath).toBe("album-a/2.jpg");
+  });
+
+  it("stores album progress for the current-directory album", () => {
+    const sourceKey = "source-root";
+    const image = makeImage("1", "root.jpg");
+    const store = recordViewedImage({
+      store: loadReadingStore(),
+      sourceKey,
+      image,
+      index: 0,
+      scope: "album",
+      albumPath: ROOT_ALBUM_PATH
+    });
+    const state = getSourceState(store, sourceKey);
+
+    expect(state.albumMode.recentAlbumPath).toBe(ROOT_ALBUM_PATH);
+    expect(state.albumMode.albums[ROOT_ALBUM_PATH]?.relativePath).toBe("root.jpg");
   });
 });

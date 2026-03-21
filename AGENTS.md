@@ -20,7 +20,7 @@
 2. 浏览模式
 - 默认进入 `画集模式`。
 - `全图模式`：展示当前路径下所有图片，可按路径过滤。
-- `画集模式`：按一级子目录聚合为画集（根目录图片不作为画集）。
+- `画集模式`：按一级子目录聚合为画集；若当前目录本身有图片，则额外生成一个“当前目录”画集。一级子目录内的更深层图片仍归属其顶层画集。
 - 画集可打开详情弹窗，弹窗内继续使用网格浏览。
 - 画集详情弹窗标题支持超长路径自动换行（最多 2 行截断），且不能影响网格每行排版宽度计算。
 
@@ -53,10 +53,15 @@
 - 安装依赖：`pnpm install`
 - 本地开发：`pnpm dev`
 - 构建：`pnpm build`
+- 类型检查：`pnpm exec tsc -b`（与构建脚本一致）
 - 测试：`pnpm test`
+- 测试（监听模式）：`pnpm test:watch`
 - 预览构建产物：`pnpm preview`
 - Cloudflare 登录检查：`pnpm cf:whoami`
 - Cloudflare Pages 发布：`pnpm cf:deploy`
+- Cloudflare Pages 项目名可通过 `CF_PAGES_PROJECT` 环境变量覆盖（默认 `image-browser`）
+- GitHub Actions 自动发布：`push` 到 `main` 会触发 `.github/workflows/deploy-pages.yml` 执行构建并部署到 Cloudflare Pages。
+- GitHub Actions 同一部署流程也支持手动触发（`workflow_dispatch`）。
 
 ## 编码与协作规范
 

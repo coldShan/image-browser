@@ -68,12 +68,16 @@ export default function App() {
     images,
     albums
   });
+  const activeAlbum = useMemo(
+    () => (activeAlbumPath ? albums.find((album) => album.path === activeAlbumPath) ?? null : null),
+    [activeAlbumPath, albums]
+  );
   const allVisibleImages = useMemo(
     () => filterImagesByPath(images, allModePath),
     [allModePath, images]
   );
   const albumDetailImages = useMemo(() => {
-    if (!activeAlbumPath) return [];
+    if (activeAlbumPath === null) return [];
     return filterImagesByPath(images, activeAlbumPath);
   }, [activeAlbumPath, images]);
   const lightboxImages = useMemo(
@@ -94,7 +98,7 @@ export default function App() {
     ]
   );
   const activeAlbumLastViewedPath = useMemo(() => {
-    if (!activeAlbumPath) return null;
+    if (activeAlbumPath === null) return null;
     return sourceState.albumMode.albums[activeAlbumPath]?.relativePath ?? null;
   }, [activeAlbumPath, sourceState.albumMode.albums]);
   const isAlbumListView = viewMode === "album";
@@ -289,8 +293,13 @@ export default function App() {
     if (!lightboxOpen) return;
     const target = lightboxImages[currentIndex];
     if (!target) return;
-    recordView({ image: target, index: currentIndex, scope: lightboxScope });
-  }, [currentIndex, lightboxImages, lightboxOpen, lightboxScope, recordView]);
+    recordView({
+      image: target,
+      index: currentIndex,
+      scope: lightboxScope,
+      albumPath: lightboxScope === "album" ? activeAlbumPath : undefined
+    });
+  }, [activeAlbumPath, currentIndex, lightboxImages, lightboxOpen, lightboxScope, recordView]);
 
   useEffect(() => {
     if (lightboxOpen) return;
@@ -487,7 +496,7 @@ export default function App() {
           ) : (
             <section className="empty-state album-empty">
               <h2>当前目录没有可展示的画集</h2>
-              <p>画集模式仅展示一级子目录，根目录图片可在全图模式查看。</p>
+              <p>画集模式展示一级子目录；若当前目录有图片，会额外生成“当前目录”画集。</p>
             </section>
           )}
         </section>
@@ -519,6 +528,7 @@ export default function App() {
       <AlbumDetailModal
         open={albumDetailOpen && viewMode === "album"}
         albumPath={activeAlbumPath}
+        albumTitle={activeAlbum?.title}
         images={albumDetailImages}
         onClose={onAlbumModalClose}
         onOpenImage={openAlbumAt}

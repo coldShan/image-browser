@@ -6,6 +6,7 @@ import GalleryGrid from "./GalleryGrid";
 type AlbumDetailModalProps = {
   open: boolean;
   albumPath: string | null;
+  albumTitle?: string | null;
   images: GalleryImage[];
   onClose: () => void;
   onOpenImage: (index: number) => void;
@@ -19,6 +20,7 @@ type AlbumDetailModalProps = {
 export default function AlbumDetailModal({
   open,
   albumPath,
+  albumTitle,
   images,
   onClose,
   onOpenImage,
@@ -29,6 +31,7 @@ export default function AlbumDetailModal({
   restoreToken
 }: AlbumDetailModalProps) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  const title = albumTitle ?? albumPath ?? "未命名画集";
 
   const onPanelWheelCapture = useCallback((event: WheelEvent<HTMLDivElement>) => {
     const body = bodyRef.current;
@@ -54,7 +57,7 @@ export default function AlbumDetailModal({
         as="div"
         className="album-detail-modal"
         onClose={onClose}
-        aria-label={`画集详情 ${albumPath ?? ""}`.trim()}
+        aria-label={`画集详情 ${title}`.trim()}
       >
         <TransitionChild
           as={Fragment}
@@ -86,7 +89,7 @@ export default function AlbumDetailModal({
                 <header className="album-detail-header">
                   <div className="album-detail-title-wrap">
                     <span className="album-detail-kicker">album screen</span>
-                    <DialogTitle as="h2">{albumPath ?? "未命名画集"}</DialogTitle>
+                    <DialogTitle as="h2">{title}</DialogTitle>
                     <p>{images.length} 张图片</p>
                   </div>
                   <button
