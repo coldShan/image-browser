@@ -1,5 +1,5 @@
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
-import { Fragment, useCallback, useRef, type WheelEvent } from "react";
+import { Fragment, useCallback, useRef, type MouseEvent, type WheelEvent } from "react";
 import type { GalleryImage } from "../types/gallery";
 import GalleryGrid from "./GalleryGrid";
 
@@ -50,6 +50,16 @@ export default function AlbumDetailModal({
     body.scrollTop = nextScrollTop;
     event.preventDefault();
   }, []);
+
+  const onBodyClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest("button, a, input, select, textarea, summary, [role='button']")) return;
+      onClose();
+    },
+    [onClose]
+  );
 
   return (
     <Transition appear show={open} as={Fragment}>
@@ -102,7 +112,7 @@ export default function AlbumDetailModal({
                   </button>
                 </header>
 
-                <div ref={bodyRef} className="album-detail-body">
+                <div ref={bodyRef} className="album-detail-body" onClick={onBodyClick}>
                   {images.length > 0 ? (
                     <GalleryGrid
                       images={images}

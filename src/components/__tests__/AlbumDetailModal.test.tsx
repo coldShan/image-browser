@@ -10,6 +10,9 @@ vi.mock("../GalleryGrid", () => ({
       <button type="button" onClick={() => onOpen(0)}>
         打开第一张
       </button>
+      <div data-testid="album-detail-grid-blank" aria-hidden="true">
+        空白区域
+      </div>
       <p>{`详情图数 ${images.length}`}</p>
     </div>
   )
@@ -84,8 +87,29 @@ describe("AlbumDetailModal", () => {
 
     await user.click(screen.getByRole("button", { name: "打开第一张" }));
     expect(onOpenImage).toHaveBeenCalledWith(0);
+    expect(onClose).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "关闭画集详情" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes when clicking blank area inside album body", async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <AlbumDetailModal
+        open
+        albumPath="album-a"
+        images={images}
+        onClose={onClose}
+        onOpenImage={() => {}}
+        ensurePreviewUrl={async () => null}
+        releasePreviewUrl={() => {}}
+      />
+    );
+
+    await user.click(screen.getByTestId("album-detail-grid-blank"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
