@@ -39,6 +39,15 @@ type WalkState = {
   path: string;
 };
 
+type PersistedDirectoryRecord = {
+  key: string;
+  handle: FileSystemDirectoryHandle;
+};
+
+const DIRECTORY_HANDLE_DB_NAME = "image-browser:directory-handles:v1";
+const DIRECTORY_HANDLE_STORE_NAME = "handles";
+const LAST_DIRECTORY_KEY = "last-directory";
+
 const SKIPPABLE_DIRECTORY_ERROR_NAMES = new Set([
   "NoModificationAllowedError",
   "NotAllowedError",
@@ -64,6 +73,9 @@ export const getSourceType = (name: string): GallerySourceType => {
 export const hasDirectoryPicker = (): boolean =>
   typeof window !== "undefined" && "showDirectoryPicker" in window;
 
+export const canPersistDirectoryHandle = (): boolean =>
+  hasDirectoryPicker() && typeof indexedDB !== "undefined";
+
 export const hasImagePicker = (): boolean =>
   hasDirectoryPicker() || typeof document !== "undefined";
 
@@ -73,6 +85,103 @@ export const getDirectoryPicker = ():
   if (typeof window === "undefined") return null;
   const picker = (window as PickerWindow).showDirectoryPicker;
   return typeof picker === "function" ? picker.bind(window) : null;
+};
+
+const openDirectoryHandleStore = async (): Promise<IDBDatabase | null> => {
+  if (!canPersistDirectoryHandle()) return null;
+
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DIRECTORY_HANDLE_DB_NAME, 1);
+
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (database.objectStoreNames.contains(DIRECTORY_HANDLE_STORE_NAME)) return;
+      database.createObjectStore(DIRECTORY_HANDLE_STORE_NAME, { keyPath: "key" });
+    };
+    request.onerror = () => {
+      reject(request.error ?? new Error("Failed to open directory handle store."));
+    };
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+  });
+};
+
+const runDirectoryHandleStoreRequest = async <T>(
+  mode: IDBTransactionMode,
+  action: (store: IDBObjectStore) => IDBRequest<T>
+): Promise<T | undefined> => {
+  const database = await openDirectoryHandleStore();
+  if (!database) return undefined;
+
+  try {
+    return await new Promise((resolve, reject) => {
+      const request = action(
+        database.transaction(DIRECTORY_HANDLE_STORE_NAME, mode).objectStore(
+          DIRECTORY_HANDLE_STORE_NAME
+        )
+      );
+
+      request.onerror = () => {
+        reject(request.error ?? new Error("Directory handle store request failed."));
+      };
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
+    });
+  } finally {
+    database.close?.();
+  }
+};
+
+const isPersistedDirectoryRecord = (
+  value: unknown
+): value is PersistedDirectoryRecord =>
+  typeof value === "object" &&
+  value !== null &&
+  "handle" in value &&
+  (value as PersistedDirectoryRecord).handle?.kind === "directory";
+
+export const loadPersistedDirectoryHandle = async (): Promise<FileSystemDirectoryHandle | null> => {
+  const record = await runDirectoryHandleStoreRequest(
+    "readonly",
+    (store) => store.get(LAST_DIRECTORY_KEY)
+  );
+  return isPersistedDirectoryRecord(record) ? record.handle : null;
+};
+
+export const persistDirectoryHandle = async (
+  handle: FileSystemDirectoryHandle
+): Promise<void> => {
+  await runDirectoryHandleStoreRequest("readwrite", (store) =>
+    store.put({ key: LAST_DIRECTORY_KEY, handle })
+  );
+};
+
+export const clearPersistedDirectoryHandle = async (): Promise<void> => {
+  await runDirectoryHandleStoreRequest("readwrite", (store) =>
+    store.delete(LAST_DIRECTORY_KEY)
+  );
+};
+
+export const queryDirectoryPermission = async (
+  handle: FileSystemHandle,
+  mode: "read" | "readwrite" = "read"
+): Promise<FileSystemPermissionState> => {
+  const queryPermission = handle.queryPermission;
+  if (typeof queryPermission !== "function") return "prompt";
+  return queryPermission.call(handle, { mode });
+};
+
+export const requestDirectoryPermission = async (
+  handle: FileSystemHandle,
+  mode: "read" | "readwrite" = "read"
+): Promise<FileSystemPermissionState> => {
+  const requestPermission = handle.requestPermission;
+  if (typeof requestPermission !== "function") {
+    return queryDirectoryPermission(handle, mode);
+  }
+  return requestPermission.call(handle, { mode });
 };
 
 const toVirtualFileHandle = (file: File): FileSystemFileHandle =>

@@ -71,6 +71,9 @@ const hookResult = {
   loading: false,
   error: null,
   pickDirectory: vi.fn(async () => {}),
+  restoreLastDirectory: vi.fn(async () => {}),
+  canRestoreLastDirectory: false,
+  restoreLastDirectoryName: null,
   refreshCurrentDirectory: vi.fn(async () => {}),
   canRefreshCurrentDirectory: true,
   clearImages: vi.fn(() => {}),
@@ -323,6 +326,25 @@ describe("App view modes", () => {
 
     await user.click(screen.getByRole("button", { name: "刷新当前目录" }));
     expect(hookResult.refreshCurrentDirectory).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers restoring the last directory when recovery is available", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useDirectoryImages).mockReturnValue({
+      ...hookResult,
+      images: [],
+      canRefreshCurrentDirectory: false,
+      canRestoreLastDirectory: true,
+      restoreLastDirectoryName: "Pictures"
+    });
+
+    render(<App />);
+
+    const restoreButton = screen.getByRole("button", { name: "恢复上次目录：Pictures" });
+    expect(restoreButton).toBeInTheDocument();
+
+    await user.click(restoreButton);
+    expect(hookResult.restoreLastDirectory).toHaveBeenCalledTimes(1);
   });
 
   it("opens album detail in fullscreen modal and keeps album list state", async () => {
