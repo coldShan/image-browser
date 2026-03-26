@@ -29,9 +29,6 @@ export default function App() {
     loading,
     error,
     pickDirectory,
-    restoreLastDirectory,
-    canRestoreLastDirectory,
-    restoreLastDirectoryName,
     refreshCurrentDirectory,
     canRefreshCurrentDirectory,
     clearImages,
@@ -216,11 +213,6 @@ export default function App() {
   const onRefreshCurrentDirectory = useCallback(async () => {
     await refreshCurrentDirectory();
   }, [refreshCurrentDirectory]);
-
-  const onRestoreLastDirectory = useCallback(async () => {
-    await restoreLastDirectory();
-    resetBrowseContext();
-  }, [resetBrowseContext, restoreLastDirectory]);
 
   const resetLightboxThrottle = useCallback(() => {
     const state = lightboxThrottleRef.current;
@@ -437,17 +429,6 @@ export default function App() {
                 返回根路径全图
               </button>
             )}
-            {canRestoreLastDirectory && restoreLastDirectoryName && (
-              <button
-                type="button"
-                className="text-button"
-                onClick={() => void onRestoreLastDirectory()}
-                disabled={loading}
-                aria-label={`恢复上次目录：${restoreLastDirectoryName}`}
-              >
-                {`恢复上次目录：${restoreLastDirectoryName}`}
-              </button>
-            )}
             {albumDetailOpen && (
               <button type="button" className="text-button" onClick={closeAlbumDetail}>
                 关闭画集详情
@@ -490,12 +471,6 @@ export default function App() {
       )}
 
       {error && <p className="status error">{error}</p>}
-
-      {!error && canRestoreLastDirectory && restoreLastDirectoryName && !images.length && !loading && (
-        <p className="status warning">
-          {`检测到上次浏览目录“${restoreLastDirectoryName}”，点击“恢复上次目录”可继续浏览；浏览器可能会再次请求授权。`}
-        </p>
-      )}
 
       {!images.length && !loading && !error && (
         <section className="empty-state">

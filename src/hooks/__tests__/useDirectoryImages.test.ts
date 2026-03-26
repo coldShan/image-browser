@@ -1,76 +1,6 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDirectoryImages } from "../useDirectoryImages";
-
-type DirectoryRecoveryState = {
-  canRestoreLastDirectory?: boolean;
-  restoreLastDirectoryName?: string | null;
-  restoreLastDirectory?: () => Promise<void>;
-};
-
-type FakeRequest<T> = {
-  onerror: ((event: Event) => void) | null;
-  onsuccess: ((event: Event) => void) | null;
-  onupgradeneeded: ((event: Event) => void) | null;
-  result?: T;
-  error?: Error;
-};
-
-const createRequest = <T,>(executor: (request: FakeRequest<T>) => void): FakeRequest<T> => {
-  const request: FakeRequest<T> = {
-    onerror: null,
-    onsuccess: null,
-    onupgradeneeded: null
-  };
-
-  queueMicrotask(() => executor(request));
-  return request;
-};
-
-const installIndexedDbWithHandle = (handle: FileSystemDirectoryHandle | null) => {
-  let storedHandle = handle;
-
-  const database = {
-    objectStoreNames: {
-      contains: (name: string) => name === "handles"
-    },
-    createObjectStore: vi.fn(),
-    transaction: () => ({
-      objectStore: () => ({
-        get: () =>
-          createRequest((request) => {
-            request.result = storedHandle ? { key: "last-directory", handle: storedHandle } : undefined;
-            request.onsuccess?.(new Event("success"));
-          }),
-        put: (value: { handle: FileSystemDirectoryHandle }) =>
-          createRequest((request) => {
-            storedHandle = value.handle;
-            request.result = "last-directory";
-            request.onsuccess?.(new Event("success"));
-          }),
-        delete: () =>
-          createRequest((request) => {
-            storedHandle = null;
-            request.result = undefined;
-            request.onsuccess?.(new Event("success"));
-          })
-      })
-    })
-  };
-
-  Object.defineProperty(window, "indexedDB", {
-    configurable: true,
-    writable: true,
-    value: {
-      open: () =>
-        createRequest((request) => {
-          request.result = database;
-          request.onupgradeneeded?.(new Event("upgradeneeded"));
-          request.onsuccess?.(new Event("success"));
-        })
-    }
-  });
-};
 
 describe("useDirectoryImages", () => {
   afterEach(() => {
@@ -88,7 +18,6 @@ describe("useDirectoryImages", () => {
       writable: true,
       value: vi.fn()
     });
-    Reflect.deleteProperty(window, "indexedDB");
   });
 
   it("scans metadata first and reads file only when preview is requested", async () => {
@@ -221,71 +150,5 @@ describe("useDirectoryImages", () => {
 
     expect(result.current.images[0].name).toBe("photo-2.jpg");
     expect(picker).toHaveBeenCalledTimes(1);
-  });
-
-  it("restores a previously granted directory handle on mount", async () => {
-    const fileHandle = {
-      kind: "file",
-      name: "photo.jpg",
-      getFile: vi.fn(async () => new File(["x"], "photo.jpg", { type: "image/jpeg" }))
-    } as unknown as FileSystemFileHandle;
-    const directory = {
-      kind: "directory",
-      name: "Pictures",
-      queryPermission: vi.fn(async () => "granted"),
-      async *values() {
-        yield fileHandle as unknown as FileSystemHandle;
-      }
-    } as unknown as FileSystemDirectoryHandle;
-
-    installIndexedDbWithHandle(directory);
-
-    const { result } = renderHook(() => useDirectoryImages());
-
-    await waitFor(() => {
-      expect(result.current.images).toHaveLength(1);
-    });
-    expect(result.current.images[0].name).toBe("photo.jpg");
-    expect(result.current.canRefreshCurrentDirectory).toBe(true);
-  });
-
-  it("exposes last directory recovery when permission needs confirmation", async () => {
-    const directory = {
-      kind: "directory",
-      name: "Pictures",
-      queryPermission: vi.fn(async () => "prompt"),
-      requestPermission: vi.fn(async () => "granted"),
-      async *values() {
-        yield {
-          kind: "file",
-          name: "photo.jpg",
-          getFile: vi.fn(async () => new File(["x"], "photo.jpg", { type: "image/jpeg" }))
-        } as unknown as FileSystemHandle;
-      }
-    } as unknown as FileSystemDirectoryHandle;
-
-    installIndexedDbWithHandle(directory);
-
-    const { result } = renderHook(() => useDirectoryImages());
-
-    await waitFor(() => {
-      expect(
-        (result.current as typeof result.current & DirectoryRecoveryState)
-          .canRestoreLastDirectory
-      ).toBe(true);
-    });
-    expect(
-      (result.current as typeof result.current & DirectoryRecoveryState)
-        .restoreLastDirectoryName
-    ).toBe("Pictures");
-
-    await act(async () => {
-      await (
-        result.current as typeof result.current & DirectoryRecoveryState
-      ).restoreLastDirectory?.();
-    });
-
-    expect(result.current.images).toHaveLength(1);
-    expect(directory.requestPermission).toHaveBeenCalledWith({ mode: "read" });
   });
 });
