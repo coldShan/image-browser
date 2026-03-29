@@ -1,5 +1,5 @@
 import type { GalleryImage } from "../types/gallery";
-import { ROOT_ALBUM_PATH } from "./albums";
+import { getAlbumPath } from "./albums";
 
 export const READING_HISTORY_STORAGE_KEY = "image-browser:reading-history:v1";
 const MAX_SOURCE_ENTRIES = 30;
@@ -123,9 +123,7 @@ const hash = (input: string): string => {
 };
 
 const toAlbumPath = (relativePath: string): string | null => {
-  const separatorIndex = relativePath.indexOf("/");
-  if (separatorIndex <= 0) return ROOT_ALBUM_PATH;
-  return relativePath.slice(0, separatorIndex);
+  return getAlbumPath(relativePath);
 };
 
 const pruneSources = (sources: StoreSourceMap): StoreSourceMap => {

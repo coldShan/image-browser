@@ -163,4 +163,22 @@ describe("readingHistory", () => {
     expect(state.albumMode.recentAlbumPath).toBe(ROOT_ALBUM_PATH);
     expect(state.albumMode.albums[ROOT_ALBUM_PATH]?.relativePath).toBe("root.jpg");
   });
+
+  it("stores nested album progress under the second-level path", () => {
+    const sourceKey = "source-nested";
+    const image = makeImage("1", "album-a/sub/page-1.jpg");
+    const store = recordViewedImage({
+      store: loadReadingStore(),
+      sourceKey,
+      image,
+      index: 0,
+      scope: "album"
+    });
+    const state = getSourceState(store, sourceKey);
+
+    expect(state.albumMode.recentAlbumPath).toBe("album-a/sub");
+    expect(state.albumMode.albums["album-a/sub"]?.relativePath).toBe(
+      "album-a/sub/page-1.jpg"
+    );
+  });
 });

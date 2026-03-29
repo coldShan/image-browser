@@ -91,18 +91,24 @@ const readingHistoryResult = {
     albumMode: {
       albums: {
         "album-a": {
+          relativePath: "album-a/a-1.jpg",
+          index: 0,
+          viewedAt: 1
+        },
+        "album-a/sub": {
           relativePath: "album-a/sub/a-2.jpg",
-          index: 1,
+          index: 0,
           viewedAt: 2
         }
       },
-      recentAlbumPath: "album-a"
+      recentAlbumPath: "album-a/sub"
     },
     updatedAt: 2
   },
-  recentAlbumPath: "album-a",
+  recentAlbumPath: "album-a/sub",
   albumProgressByPath: {
-    "album-a": 0.5,
+    "album-a": 1,
+    "album-a/sub": 1,
     "album-b": 0
   },
   recordView: vi.fn(() => {})
@@ -233,7 +239,12 @@ describe("App view modes", () => {
       (latestAlbumGridProps?.albums as Array<{ path: string; title: string; imageCount: number }>).map(
         (item) => [item.path, item.title, item.imageCount]
       )
-    ).toContainEqual([ROOT_ALBUM_PATH, ROOT_ALBUM_TITLE, 2]);
+    ).toEqual([
+      [ROOT_ALBUM_PATH, ROOT_ALBUM_TITLE, 2],
+      ["album-a", "album-a", 1],
+      ["album-a/sub", "album-a/sub", 1],
+      ["album-b", "album-b", 1]
+    ]);
 
     await user.click(screen.getByRole("tab", { name: "全图模式" }));
     expect(screen.getByRole("tab", { name: "全图模式" })).toHaveAttribute(
@@ -248,12 +259,12 @@ describe("App view modes", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(latestAlbumGridProps?.recentAlbumPath).toBe("album-a");
-    expect(latestAlbumGridProps?.restoreAlbumPath).toBe("album-a");
+    expect(latestAlbumGridProps?.recentAlbumPath).toBe("album-a/sub");
+    expect(latestAlbumGridProps?.restoreAlbumPath).toBe("album-a/sub");
     expect(latestAlbumGridProps?.restoreToken).toEqual(expect.any(Number));
     expect(
-      (latestAlbumGridProps?.progressByAlbumPath as Record<string, number>)["album-a"]
-    ).toBe(0.5);
+      (latestAlbumGridProps?.progressByAlbumPath as Record<string, number>)["album-a/sub"]
+    ).toBe(1);
 
     await user.click(screen.getByRole("tab", { name: "全图模式" }));
     expect(latestGalleryProps?.lastViewedRelativePath).toBe("album-a/a-1.jpg");
@@ -288,7 +299,7 @@ describe("App view modes", () => {
 
     await user.click(screen.getByRole("tab", { name: "全图模式" }));
 
-    expect(screen.getByText("当前列表 2 张")).toBeInTheDocument();
+    expect(screen.getByText("当前列表 1 张")).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "画集详情-album-a" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "返回根路径全图" })).toBeInTheDocument();
 
@@ -350,11 +361,11 @@ describe("App view modes", () => {
     render(<App />);
 
     await user.click(screen.getByRole("tab", { name: "画集模式" }));
-    await user.click(screen.getByRole("button", { name: "打开画集 album-a" }));
+    await user.click(screen.getByRole("button", { name: "打开画集 album-a/sub" }));
 
     expect(latestAlbumDetailProps?.restoreRelativePath).toBe("album-a/sub/a-2.jpg");
     await user.keyboard("{Enter}");
-    expect(latestLightboxProps?.index).toBe(1);
+    expect(latestLightboxProps?.index).toBe(0);
   });
 
   it("does not manually lock body scrolling when album detail opens", async () => {

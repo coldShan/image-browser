@@ -12,17 +12,17 @@ const byPathAsc = (a: { relativePath: string }, b: { relativePath: string }): nu
 const normalizePath = (path: string): string => path.replace(/^\/+|\/+$/g, "");
 const isRootImage = (relativePath: string): boolean => !relativePath.includes("/");
 
-export const isUnderPath = (relativePath: string, path: string): boolean => {
-  const normalized = normalizePath(path);
-  if (!normalized) return true;
-  return relativePath.startsWith(`${normalized}/`);
+export const getAlbumPath = (relativePath: string): string => {
+  const segments = normalizePath(relativePath).split("/").filter(Boolean);
+  if (segments.length <= 1) return ROOT_ALBUM_PATH;
+  return segments.slice(0, Math.min(segments.length - 1, 2)).join("/");
 };
 
 export const filterImagesByPath = (images: GalleryImage[], path: string): GalleryImage[] => {
   if (!path) return images;
   if (path === ROOT_ALBUM_PATH) return images.filter((item) => isRootImage(item.relativePath));
   const normalized = normalizePath(path);
-  return images.filter((item) => isUnderPath(item.relativePath, normalized));
+  return images.filter((item) => getAlbumPath(item.relativePath) === normalized);
 };
 
 export const buildAlbums = (images: GalleryImage[]): AlbumSummary[] => {
@@ -30,18 +30,17 @@ export const buildAlbums = (images: GalleryImage[]): AlbumSummary[] => {
   const rootImages: GalleryImage[] = [];
 
   for (const image of images) {
-    const slashIndex = image.relativePath.indexOf("/");
-    if (slashIndex <= 0) {
+    const albumPath = getAlbumPath(image.relativePath);
+    if (albumPath === ROOT_ALBUM_PATH) {
       rootImages.push(image);
       continue;
     }
-    const topLevel = image.relativePath.slice(0, slashIndex);
-    const list = map.get(topLevel);
+    const list = map.get(albumPath);
     if (list) {
       list.push(image);
       continue;
     }
-    map.set(topLevel, [image]);
+    map.set(albumPath, [image]);
   }
 
   const albums = Array.from(map.entries())

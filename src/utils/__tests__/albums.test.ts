@@ -3,7 +3,6 @@ import type { GalleryImage } from "../../types/gallery";
 import {
   buildAlbums,
   filterImagesByPath,
-  isUnderPath,
   ROOT_ALBUM_PATH,
   ROOT_ALBUM_TITLE
 } from "../albums";
@@ -39,15 +38,29 @@ describe("buildAlbums", () => {
     });
   });
 
-  it("creates albums from only first-level directories when root images are absent", () => {
+  it("creates parent and second-level albums side by side", () => {
     const albums = buildAlbums([
       makeImage("1", "album-b/cover.jpg"),
       makeImage("2", "album-a/page-2.jpg"),
       makeImage("3", "album-a/page-1.jpg"),
-      makeImage("4", "album-a/sub/page-3.jpg")
+      makeImage("4", "album-a/sub/page-3.jpg"),
+      makeImage("5", "album-a/sub/deeper/page-4.jpg")
     ]);
 
-    expect(albums.map((item) => item.path)).toEqual(["album-a", "album-b"]);
+    expect(albums).toEqual([
+      expect.objectContaining({
+        path: "album-a",
+        imageCount: 2
+      }),
+      expect.objectContaining({
+        path: "album-a/sub",
+        imageCount: 2
+      }),
+      expect.objectContaining({
+        path: "album-b",
+        imageCount: 1
+      })
+    ]);
   });
 
   it("uses first image by natural relative-path ordering as cover", () => {
@@ -64,14 +77,6 @@ describe("buildAlbums", () => {
       coverRelativePath: "album-a/page-1.jpg",
       imageCount: 3
     });
-  });
-});
-
-describe("isUnderPath", () => {
-  it("matches descendants under a directory path", () => {
-    expect(isUnderPath("album-a/page-1.jpg", "album-a")).toBe(true);
-    expect(isUnderPath("album-a/sub/page-2.jpg", "album-a")).toBe(true);
-    expect(isUnderPath("album-b/page-1.jpg", "album-a")).toBe(false);
   });
 });
 
@@ -94,7 +99,7 @@ describe("filterImagesByPath", () => {
     ]);
   });
 
-  it("returns images under path recursively", () => {
+  it("returns only direct images for a first-level album", () => {
     const images = [
       makeImage("1", "root.jpg"),
       makeImage("2", "album-a/page-1.jpg"),
@@ -103,8 +108,22 @@ describe("filterImagesByPath", () => {
     ];
 
     expect(filterImagesByPath(images, "album-a").map((item) => item.relativePath)).toEqual([
-      "album-a/page-1.jpg",
-      "album-a/sub/page-2.jpg"
+      "album-a/page-1.jpg"
+    ]);
+  });
+
+  it("returns second-level album images together with deeper descendants", () => {
+    const images = [
+      makeImage("1", "root.jpg"),
+      makeImage("2", "album-a/page-1.jpg"),
+      makeImage("3", "album-a/sub/page-2.jpg"),
+      makeImage("4", "album-a/sub/deeper/page-3.jpg"),
+      makeImage("5", "album-b/page-1.jpg")
+    ];
+
+    expect(filterImagesByPath(images, "album-a/sub").map((item) => item.relativePath)).toEqual([
+      "album-a/sub/page-2.jpg",
+      "album-a/sub/deeper/page-3.jpg"
     ]);
   });
 });
