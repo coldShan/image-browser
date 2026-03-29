@@ -19,7 +19,7 @@ import "react-photo-album/rows.css";
 import type { GalleryImage } from "../types/gallery";
 import { BLANK_IMAGE } from "../utils/lightbox";
 
-const PREVIEW_RELEASE_DELAY_MS = 10_000;
+const PREVIEW_RELEASE_DELAY_MS = 180_000;
 const SCROLL_SETTLE_DELAY_MS = 180;
 
 type LazyPreviewImageProps = RenderImageProps & {

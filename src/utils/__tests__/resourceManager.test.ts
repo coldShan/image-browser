@@ -2,8 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GalleryImage } from "../../types/gallery";
 import { createResourceManager } from "../resourceManager";
 
-const createImage = (id: string, name = `${id}.jpg`): GalleryImage => {
-  const file = new File([id], name, { type: "image/jpeg" });
+const createImage = (
+  id: string,
+  name = `${id}.jpg`,
+  contents = id
+): GalleryImage => {
+  const file = new File([contents], name, { type: "image/jpeg" });
   const getFile = vi.fn(async () => file);
 
   return {
@@ -11,7 +15,7 @@ const createImage = (id: string, name = `${id}.jpg`): GalleryImage => {
     name,
     relativePath: name,
     lastModified: 0,
-    size: 0,
+    size: file.size,
     sourceType: "other",
     width: 4,
     height: 3,
@@ -39,7 +43,7 @@ describe("resourceManager", () => {
   });
 
   it("reuses preview url from cache without duplicate reads", async () => {
-    const manager = createResourceManager({ previewCacheLimit: 200 });
+    const manager = createResourceManager({ previewCacheLimitBytes: 200 });
     const image = createImage("a");
 
     const first = await manager.ensurePreviewUrl(image);
@@ -49,10 +53,10 @@ describe("resourceManager", () => {
     expect(image.fileHandle.getFile).toHaveBeenCalledTimes(1);
   });
 
-  it("evicts old preview urls when cache limit is exceeded", async () => {
-    const manager = createResourceManager({ previewCacheLimit: 1 });
-    const first = createImage("first");
-    const second = createImage("second");
+  it("evicts old preview urls when byte limit is exceeded", async () => {
+    const manager = createResourceManager({ previewCacheLimitBytes: 5 });
+    const first = createImage("first", "first.jpg", "1234");
+    const second = createImage("second", "second.jpg", "56");
 
     await manager.ensurePreviewUrl(first);
     await manager.ensurePreviewUrl(second);
@@ -64,7 +68,7 @@ describe("resourceManager", () => {
 
   it("keeps only nearby lightbox urls around current index", async () => {
     const manager = createResourceManager({
-      previewCacheLimit: 200,
+      previewCacheLimitBytes: 200,
       lightboxPreloadDistance: 1,
       lightboxReleaseDistance: 2
     });

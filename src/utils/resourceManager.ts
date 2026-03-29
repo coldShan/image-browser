@@ -3,18 +3,19 @@ import type { GalleryImage } from "../types/gallery";
 type CacheEntry = {
   url: string;
   usedAt: number;
+  sizeBytes: number;
 };
 
 type CacheStore = Map<string, CacheEntry>;
 
 type ManagerOptions = {
-  previewCacheLimit?: number;
+  previewCacheLimitBytes?: number;
   lightboxPreloadDistance?: number;
   lightboxReleaseDistance?: number;
 };
 
 const DEFAULT_OPTIONS = {
-  previewCacheLimit: 200,
+  previewCacheLimitBytes: 256 * 1024 * 1024,
   lightboxPreloadDistance: 1,
   lightboxReleaseDistance: 2
 } satisfies Required<ManagerOptions>;
@@ -45,7 +46,12 @@ const revokeFromCache = (cache: CacheStore, id: string): void => {
   cache.delete(id);
 };
 
-const createStaticPreviewFromFile = async (file: File): Promise<string | null> => {
+type ProducedResource = {
+  url: string;
+  sizeBytes: number;
+};
+
+const createStaticPreviewFromFile = async (file: File): Promise<ProducedResource | null> => {
   if (typeof createImageBitmap !== "function" || typeof document === "undefined") {
     return null;
   }
@@ -62,7 +68,12 @@ const createStaticPreviewFromFile = async (file: File): Promise<string | null> =
       canvas.toBlob(resolve, "image/png");
     });
 
-    return blob ? URL.createObjectURL(blob) : null;
+    return blob
+      ? {
+          url: URL.createObjectURL(blob),
+          sizeBytes: blob.size
+        }
+      : null;
   } catch {
     return null;
   }
@@ -79,7 +90,7 @@ export const createResourceManager = (options: ManagerOptions = {}) => {
     id: string,
     cache: CacheStore,
     pending: Map<string, Promise<string>>,
-    producer: () => Promise<string>
+    producer: () => Promise<ProducedResource>
   ): Promise<string> => {
     const cached = cache.get(id);
     if (cached) {
@@ -90,8 +101,8 @@ export const createResourceManager = (options: ManagerOptions = {}) => {
     const inflight = pending.get(id);
     if (inflight) return inflight;
 
-    const task = producer().then((url) => {
-      cache.set(id, { url, usedAt: Date.now() });
+    const task = producer().then(({ url, sizeBytes }) => {
+      cache.set(id, { url, sizeBytes, usedAt: Date.now() });
       pending.delete(id);
       return url;
     });
@@ -100,10 +111,14 @@ export const createResourceManager = (options: ManagerOptions = {}) => {
     return task;
   };
 
-  const enforcePreviewLimit = (): void => {
-    while (previewCache.size > config.previewCacheLimit) {
+  const getPreviewCacheBytes = (): number =>
+    Array.from(previewCache.values()).reduce((total, entry) => total + entry.sizeBytes, 0);
+
+  const enforcePreviewLimit = (protectedId?: string): void => {
+    while (getPreviewCacheBytes() > config.previewCacheLimitBytes) {
       const id = oldestId(previewCache);
       if (!id) break;
+      if (id === protectedId) break;
       revokeFromCache(previewCache, id);
     }
   };
@@ -115,24 +130,30 @@ export const createResourceManager = (options: ManagerOptions = {}) => {
       image.id,
       previewCache,
       previewPending,
-      async (): Promise<string> => {
+      async (): Promise<ProducedResource> => {
         const file = await ensureFile(image);
         if (image.sourceType === "gif" || image.sourceType === "webp") {
           const staticUrl = await createStaticPreviewFromFile(file);
           if (staticUrl) return staticUrl;
         }
-        return URL.createObjectURL(file);
+        return {
+          url: URL.createObjectURL(file),
+          sizeBytes: file.size
+        };
       }
     );
 
-    enforcePreviewLimit();
+    enforcePreviewLimit(image.id);
     return url;
   };
 
   const ensureLightboxUrl = async (image: GalleryImage): Promise<string> =>
     withCache(image.id, lightboxCache, lightboxPending, async () => {
       const file = await ensureFile(image);
-      return URL.createObjectURL(file);
+      return {
+        url: URL.createObjectURL(file),
+        sizeBytes: 0
+      };
     });
 
   const getPreviewUrl = (id: string): string | undefined => previewCache.get(id)?.url;
